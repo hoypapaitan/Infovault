@@ -1,0 +1,94 @@
+[
+  {
+    "title": "Home",
+    "icon": "ti-dashboard",
+    "link": "userDashboard",
+    "code": 101
+  },
+  {
+    "title": "My Applications",
+    "icon": "ti-bookmark-alt",
+    "link": "applyScholarship",
+    "code": 102
+  },
+  {
+    "title": "Documents",
+    "icon": "ti-files",
+    "link": "attachedDocuments",
+    "code": 102
+  },
+
+
+  {
+    "title": "Dashboard",
+    "icon": "ti-dashboard",
+    "link": "adminDashboard",
+    "code": 201
+  },
+  
+  {
+    "title": "Scholarship Management",
+    "icon": "ti-bookmark-alt",
+    "link": "adminScholarManagement",
+    "code": 203
+  },
+  {
+    "title": "Announcements",
+    "icon": "ti-announcement",
+    "link": "adminAnnouncementManagement",
+    "code": 204
+  },
+  {
+    "title": "User Management",
+    "icon": "ti-user",
+    "link": "adminUserManagement",
+    "code": 202
+  },
+  {
+    "title": "Settings",
+    "icon": "ti-settings",
+    "link": "adminUserSettings",
+    "code": 203
+  },
+
+  {
+    "title": "Dashboard",
+    "icon": "ti-dashboard",
+    "link": "unitDashboard",
+    "code": 301
+  },
+  {
+    "title": "Scholarship Management",
+    "icon": "ti-bookmark-alt",
+    "link": "unitScholarManagement",
+    "code": 302
+  },
+  {
+    "title": "Scholars",
+    "icon": "ti-announcement",
+    "code": 303,
+    "children": [
+      {
+        "title": "Qualified",
+        "icon": "mdi-check-decagram",
+        "link": "unitApprovedScholars",
+        "code": 303
+      },
+      {
+        "title": "Not Qualified",
+        "icon": "mdi-file-cancel-outline",
+        "link": "unitUnapprovedScholars",
+        "code": 303
+      }
+    ]
+  },
+  {
+    "title": "Announcements",
+    "icon": "ti-announcement",
+    "link": "unitAnnouncementManagement",
+    "code": 304
+  }
+
+
+  
+]
