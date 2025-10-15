@@ -1,9 +1,9 @@
 {
   "name": "asct-scholarship",
   "version": "0.0.1",
-  "description": "A quasar and firebase project that records the scholarship applications and process",
-  "productName": "ASCOT Scholarship Management System",
-  "author": "AcostaNonuevoDizonOrpia <acostanonuevodizonorpia@gmail.com>",
+  "description": "A quasar and firebase project that records the graduate statistics",
+  "productName": "ASCOT Year Book and Records",
+  "author": "yearbookTeam",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
