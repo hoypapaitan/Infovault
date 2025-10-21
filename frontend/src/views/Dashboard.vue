@@ -5,6 +5,45 @@
 
 <template>
 	<div>
+		<!-- Header Background Image -->
+		<div class="profile-nav-bg" style="background-image: url('images/coverbg.png')"></div>
+		<!-- / Header Background Image -->
+
+		<!-- User Profile Card -->
+		<a-card :bordered="false" class="card-profile-head" :bodyStyle="{padding: 0,}">
+			<template #title>
+				<a-row type="flex" align="middle">
+					<a-col :span="24" :md="12" class="col-info">
+						<a-avatar 
+							shape="square" 
+							:size="74" 
+							icon="dashboard" 
+							:style="{ backgroundColor: '#1e9ecf' }"
+						/>
+						<div class="avatar-info">
+							<h4 class="font-semibold m-0">Dashboard</h4>
+							<p>Represents the graph and analytics of the Graduate Students of ASCOT</p>
+						</div>
+					</a-col>
+					<a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+						<a-space size="small">
+							<!-- <a-button type="primary"  @click="addUSerModal = true"> 
+								<a-icon type="dot-chart" />Add New Data
+							</a-button> -->
+
+							<a-button class="" type="secondary"> 
+								<a-icon type="filter" />
+							</a-button>
+						</a-space>
+						
+
+
+					</a-col>
+				</a-row>
+			</template>
+		</a-card>
+		<!-- User Profile Card -->
+
 		<!-- Counter Widgets -->
 		<a-row :gutter="24">
 			<a-col :span="24" :lg="6" >
@@ -52,13 +91,13 @@
 					</a-card-meta>
 					<!-- <span class="font-bold">{{ stat.label }}</span><br/>
 					<h5>{{  }}</h5>  -->
-					<template v-if="stat.genders !== undefined" slot="actions" >
+					<!-- <template v-if="stat.genders !== undefined" slot="actions" >
 						<a-icon key="man" type="man" /> {{ stat.genders.male }}
 						<a-icon key="woman" type="woman" /> {{ stat.genders.female }}
 					</template>
 					<template v-else slot="actions" >
 						<a @click="goTo('/resources')">View Details</a>
-					</template>
+					</template> -->
 				</a-card>
 				
 			</a-col>
@@ -66,31 +105,27 @@
 		<!-- / Counter Widgets -->
 
 		<!-- Charts -->
-		<a-row :gutter="24" type="flex" align="stretch">
+		<!-- <a-row :gutter="24" type="flex" align="stretch">
 			<a-col :span="24" :lg="12" class="mb-24">
-				<!-- Active Users Card -->
 				<CardLineChart
 					title="No. of Enrolled Students"
 					description="5 years graph representation of the GAD"
 					:chartData.sync="seriesDataEnroll"
 					:groupData.sync="groupDataEnroll"
 				></CardLineChart>
-				<!-- Active Users Card -->
 
 			</a-col>
 			<a-col :span="24" :lg="12" class="mb-24">
 				
-				<!-- Sales Overview Card -->
 				<CardLineChart
 					title="No. of Student Graduates"
 					description="5 years graph representation of the GAD"
 					:chartData.sync="seriesDataGrad"
           			:groupData.sync="groupDataGrad"
 				></CardLineChart>
-				<!-- / Sales Overview Card -->
 
-			</a-col>
-			<a-col :span="16" :lg="14" class="mb-24">
+			</a-col> -->
+			<!-- <a-col :span="16" :lg="14" class="mb-24">
 				<CardBarChart
 					title="Enrollment Courses Summary"
 					description="Course over all total of the year"
@@ -118,7 +153,7 @@
 					:groupData.sync="groupSummaryDataGraduate"
 					:showTotal="false"
 				/>
-			</a-col>
+			</a-col> -->
 			
 			
 		</a-row>
@@ -175,7 +210,7 @@ import { sum } from "pdf-lib";
 					to: "2024"
 				},
 				dashboardCards: [{
-					label: 'Students',
+					label: 'Card 1',
 					value: 0,
 					genders: {
 						male: 0,
@@ -185,7 +220,7 @@ import { sum } from "pdf-lib";
 					color: 'blue',
 					icon: 'usergroup-add'
 				}, {
-					label: 'Faculty & Staff',
+					label: 'Card 2',
 					value: 0,
 					genders: {
 						male: 0,
@@ -195,7 +230,7 @@ import { sum } from "pdf-lib";
 					color: 'orange',
 					icon: 'idcard'
 				}, {
-					label: 'Student Graduates',
+					label: 'Card 3',
 					value: 0,
 					genders: {
 						male: 0,
@@ -205,7 +240,7 @@ import { sum } from "pdf-lib";
 					color: 'green',
 					icon: 'check-circle'
 				}, {
-					label: 'Resources',
+					label: 'Card 4',
 					value: 0,
 					
 					caption: 'Total count of the document',

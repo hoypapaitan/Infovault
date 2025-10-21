@@ -7,11 +7,11 @@
 				<a-col :span="24" :md="12">
 					<h5 class="font-semibold m-0">Data Collection</h5>
 				</a-col>
-				<a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+				<!-- <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
 					<a-button type="primary"  @click="addUSerModal = true"> 
 						<a-icon type="dot-chart" />Add New Data
 					</a-button>
-				</a-col>
+				</a-col> -->
 			</a-row>
 		</template>
 		<a-table :columns="columns" :data-source="data" :pagination="true">

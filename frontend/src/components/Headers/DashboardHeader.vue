@@ -11,9 +11,9 @@
 				<a-col :span="24" :md="6">
 
 					<!-- Header Page Title -->
-					<div class="ant-page-header-heading">
+					<!-- <div class="ant-page-header-heading">
 						<span class="ant-page-header-heading-title">{{ this.$route.name }}</span>
-					</div>
+					</div> -->
 					<!-- / Header Page Title -->
 
 				</a-col>
@@ -26,7 +26,7 @@
 						<span>Sign Out</span>
 					</router-link> -->
 					<a-button type="link" icon="logout" @click="logout">
-						Sign Out
+						Log Out
 					</a-button>
 				</a-col>
 				<!-- / Header Control Column -->

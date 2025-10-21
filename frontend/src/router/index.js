@@ -106,6 +106,9 @@ let routes = [
 	{
 		path: '/sign-in',
 		name: 'Sign-In',
+		meta: {
+			layoutClass: 'layout-sign-in',
+		},
 		component: () => import('../views/Sign-In.vue'),
 	},
 	{

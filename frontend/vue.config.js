@@ -5,7 +5,7 @@ module.exports = {
 		config
 			.plugin('html')
 			.tap(args => {
-				args[0].title = 'Gender Analytics Dashboard'
+				args[0].title = 'InfoVault: ASCOT Web-based Graduate Records'
 				return args
 			})
 	}

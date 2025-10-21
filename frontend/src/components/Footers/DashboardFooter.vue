@@ -3,11 +3,11 @@
 	<!-- Layout Footer -->
 	<a-layout-footer>
 		<a-row type="flex">
-			<a-col :span="24" :md="12">
+			<a-col :span="24" :md="24">
 
 				<!-- Footer Copyright Notice -->
 				<p class="copyright">
-					© 2024, made by ASCOT Student for a better web gender analytics dashboard.
+					© 2025, By ASCOT Student to create a future solutions for recording of alumni students of ASCOT.
 				</p>
 				<!-- / Footer Copyright Notice -->
 

@@ -19,10 +19,6 @@
 			</a-layout-content>
 			<!-- / Page Content -->
 
-			<!-- Layout Footer -->
-			<!-- <DefaultFooter></DefaultFooter> -->
-			<!-- / Layout Footer -->
-
 		</a-layout>
 		<!-- / Default Layout -->
 

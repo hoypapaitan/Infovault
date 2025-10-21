@@ -11,6 +11,13 @@
 			<!-- Billing Info Column -->
 			<a-col :span="24" :md="16">
 				<a-row type="flex" :gutter="24">
+					<a-col :span="24" class="mb-24">
+
+						<!-- Payment Methods Card -->
+						<CardPaymentMethods></CardPaymentMethods>
+						<!-- Payment Methods Card -->
+
+					</a-col>
 					<a-col :span="24" :xl="12" class="mb-24">
 
 						<!-- Master Card -->
@@ -36,13 +43,7 @@
                         </a-card>
 
 					</a-col>
-					<a-col :span="24" class="mb-24">
-
-						<!-- Payment Methods Card -->
-						<CardPaymentMethods></CardPaymentMethods>
-						<!-- Payment Methods Card -->
-
-					</a-col>
+					
 				</a-row>
 			</a-col>
 			<!-- / Billing Info Column -->

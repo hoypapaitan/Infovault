@@ -333,4 +333,38 @@
 		}
 	}
 }
+
+.card-signin {
+	width: 100%;
+	max-width: 500px;
+	margin: auto;
+	box-shadow: $shadow-1;
+	border-radius: 12px;
+	text-align: right!important;
+	// margin-top: -610px;
+	// margin-bottom: 20px;
+			
+	@media( min-width: $md ) {
+		margin-bottom: 120px;
+	}
+
+	.sign-up-gateways {
+		text-align: center;
+
+		.ant-btn {
+			margin-right: 10px;
+			margin-left: 10px;
+			height: 60px;
+			width: 70px;
+			box-shadow: none;
+			
+			@media( min-width: $md ) {
+				width: 100px;
+			}
+			img {
+				width: 20px;
+			}
+		}
+	}
+}
 // / Cards

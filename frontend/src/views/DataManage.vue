@@ -1,8 +1,46 @@
 <template>
 	<div>
+		<!-- Header Background Image -->
+		<div class="profile-nav-bg" style="background-image: url('images/coverbg.png')"></div>
+		<!-- / Header Background Image -->
+
+		<!-- User Profile Card -->
+		<a-card :bordered="false" class="card-profile-head" :bodyStyle="{padding: 0,}">
+			<template #title>
+				<a-row type="flex" align="middle">
+					<a-col :span="24" :md="12" class="col-info">
+						<a-avatar 
+							shape="square" 
+							:size="74" 
+							icon="idcard" 
+							:style="{ backgroundColor: '#1e9ecf' }"
+						/>
+						<div class="avatar-info">
+							<h4 class="font-semibold m-0">Graduate Records</h4>
+							<p>Manage graduate records and details for the analytical representation</p>
+						</div>
+					</a-col>
+					<a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+						<a-space size="small">
+							<a-button type="primary"  @click="addUSerModal = true"> 
+								<a-icon type="dot-chart" />Add New Data
+							</a-button>
+
+							<a-button class="" type="secondary"> 
+								<a-icon type="filter" />
+							</a-button>
+						</a-space>
+						
+
+
+					</a-col>
+				</a-row>
+			</template>
+		</a-card>
+		<!-- User Profile Card -->
 
 		<!-- Authors Table -->
-		<a-row :gutter="24">
+		<!-- <a-row :gutter="24">
 			<a-col :span="24" :lg="24" class="mb-24">
 				Search Filter
 			</a-col>
@@ -55,7 +93,7 @@
 				
 			</a-col>
 			
-		</a-row>
+		</a-row> -->
 		<a-row :gutter="24" type="flex">
 
 			<!-- Authors Table Column -->
@@ -71,7 +109,37 @@
 			<!-- / Authors Table Column -->
 		</a-row>
 		<!-- / Authors Table -->
-		
+
+
+		<a-modal
+			v-model="addUSerModal"
+			title="Add Data"
+			centered
+		>
+			<a-alert
+				message="Notes"
+				description="If you still not yet downloaded the csv format to add data please do ensure download the template below and fill."
+				type="info"
+				show-icon
+			/>
+			
+			<a-upload-dragger
+				name="file"
+				accept="csv"
+				:before-upload="getFile"
+			>
+				<p class="ant-upload-drag-icon">
+					<a-icon type="file-add" />
+				</p>
+				<p class="ant-upload-text">
+					Click or drag file to this area to upload data
+				</p>
+				<p class="ant-upload-hint">
+					This will automatically insert the data and close the form once the upload of data is complete
+				</p>
+			</a-upload-dragger>
+			<a href="/docs/analytics_data-format.csv" download="analytics_data-format.csv" target="_blank">Click Here to Download Template</a>
+		</a-modal>
 
 		<ModalPrintReport
 			:openPrint="openPrint"
@@ -156,6 +224,7 @@ export default ({
 	},
 	data() {
 		return {
+			addUSerModal: false,
 			// Associating "Authors" table columns with its corresponding property.
 			users: [],
 			usersOrig: [],
@@ -234,12 +303,15 @@ export default ({
 
 			return `"${formatted}"`
 		},
-		async getFile(file){
+		async getFile(data){
+			// console.log(file)
+			// return
 			var reader = new FileReader();
-			let filePath = file.target.files[0]
+			// let filePath = data.file.originFileObj
+			let filePath = data
 			reader.readAsText(new Blob(
 				[filePath],
-				{"type": file.type}
+				{"type": filePath.type}
 			))
 			const fileContent = await new Promise(resolve => {
 				reader.onloadend = (event) => {
@@ -255,36 +327,31 @@ export default ({
 				createdBy: Number(this.user.userId)
 				}
 			})
+
 			this.uploadCSVData(csvData)
-		// this.csvData = csvData
+			return false
 		},
 		async uploadCSVData(data){
 			const dataUploaded = await new Promise((resolve, reject) => {
-				let uploaded = 0
-				data.forEach(el => {
-					this.$api.post("analytics/add/new", el).then((res) => {
-						let response = {...res.data}
-						if(!response.error){
-						console.log('data uploaded')
-						} else {
+				let payload = {
+					csv: data
+				}
+				this.$api.post("analytics/add/new", payload).then((res) => {
+					let response = {...res.data}
+					if(!response.error){
+						resolve({
+							message: 'Upload complete'
+						})
+					} else {
 						// show Error
 						console.log('there is some error')
-						}
-					})
-					uploaded += 1
-				});
-
-				if(uploaded === data.length){
-				resolve({
-					message: 'Upload complete'
+						reject()
+					}
 				})
-				} else {
-				reject()
-				}
 			})
 		
-			this.getList();
-			this.isNewUserModalOpen = false
+			this.$emit('updateTable')
+			this.addUSerModal = false
 		
 		},
 		async getList(){

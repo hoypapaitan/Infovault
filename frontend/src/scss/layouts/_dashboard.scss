@@ -67,14 +67,16 @@
 		}
 
 		.brand {
-			font-weight: $fw-semibold;
-			padding: $submenu-links-p;
+			text-align: center;
+			font-weight: $fw-bold;
+
 
 			span {
 				vertical-align: middle;
+				font-size: medium;
 			}
 			img {
-				height: 30px;
+				height: 40px;
 			}
 		}
 		&.ant-layout-sider-dark .brand span {
@@ -516,8 +518,10 @@
 		}
 	}
 	.ant-page-header-heading {
-		margin-top: 0;;
+		margin-top: 0;
+		
 		.ant-page-header-heading-title {
+			color: white;
 			font-weight: $fw-bold;
 			font-size: 16px;
 			line-height: 20px;
@@ -540,7 +544,7 @@
 			padding: 0 7px;
 			margin: 0;
 			box-shadow: none;
-			color: $color-gray-7;
+			color: white;
 		}
 		.ant-dropdown-link {
 			padding: 0 7px;
@@ -568,7 +572,7 @@
 		svg {
 			vertical-align: middle;
 			path {
-				fill: $color-gray-12;
+				fill: white;
 			}
 		}
 		.header-search {
