@@ -1,30 +1,156 @@
-import { route } from 'quasar/wrappers'
-import { createRouter, createMemoryHistory, createWebHistory, createWebHashHistory } from 'vue-router'
-import routes from './routes'
+import Vue from 'vue'
+import VueRouter from 'vue-router'
 
-/*
- * If not building with SSR mode, you can
- * directly export the Router instantiation;
- *
- * The function below can be async too; either use
- * async/await or return a Promise which resolves
- * with the Router instance.
- */
+Vue.use(VueRouter)
 
-export default route(function (/* { store, ssrContext } */) {
-  const createHistory = process.env.SERVER
-    ? createMemoryHistory
-    : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory)
+let routes = [
+	{
+		// will match everything
+		path: '*',
+		component: () => import('../views/404.vue'),
+	},
+	{
+		path: '/',
+		name: 'Home',
+		redirect: '/sign-in',
+	},
+	{
+		path: '/dashboard',
+		name: 'Dashboard',
+		layout: "dashboard",
+		// route level code-splitting
+		// this generates a separate chunk (about.[hash].js) for this route
+		// which is lazy-loaded when the route is visited.
+		component: () => import(/* webpackChunkName: "dashboard" */ '../views/Dashboard.vue'),
+	},
+	{
+		path: '/analytics',
+		name: 'Analytics',
+		layout: "dashboard",
+		component: () => import('../views/Analytics.vue'),
+	},
+	{
+		path: '/userManagement',
+		name: 'UserManagement',
+		layout: "dashboard",
+		component: () => import('../views/Users.vue'),
+	},
+	{
+		path: '/dataManagement',
+		name: 'DataManagement',
+		layout: "dashboard",
+		component: () => import('../views/DataManage.vue'),
+	},
+	{
+		path: '/resources',
+		name: 'Resources',
+		layout: "dashboard",
+		component: () => import('../views/Resources.vue'),
+	},
+	{
+		path: '/events',
+		name: 'Events',
+		layout: "dashboard",
+		component: () => import('../views/Events.vue'),
+	},
+	{
+		path: '/settings',
+		name: 'Settings',
+		layout: "dashboard",
+		component: () => import('../views/Settings.vue'),
+	},
+	{
+		path: '/evaluation',
+		name: 'Evaluation',
+		layout: "dashboard",
+		component: () => import('../views/Evaluation.vue'),
+	},
 
-  const Router = createRouter({
-    scrollBehavior: () => ({ left: 0, top: 0 }),
-    routes,
 
-    // Leave this as is and make changes in quasar.conf.js instead!
-    // quasar.conf.js -> build -> vueRouterMode
-    // quasar.conf.js -> build -> publicPath
-    history: createHistory(process.env.VUE_ROUTER_BASE)
-  })
+	{
+		path: '/layout',
+		name: 'Layout',
+		layout: "dashboard",
+		component: () => import('../views/Layout.vue'),
+	},
+	{
+		path: '/tables',
+		name: 'Tables',
+		layout: "dashboard",
+		component: () => import('../views/Tables.vue'),
+	},
+	{
+		path: '/billing',
+		name: 'Billing',
+		layout: "dashboard",
+		component: () => import('../views/Billing.vue'),
+	},
+	{
+		path: '/rtl',
+		name: 'RTL',
+		layout: "dashboard-rtl",
+		meta: {
+			layoutClass: 'dashboard-rtl',
+		},
+		component: () => import('../views/RTL.vue'),
+	},
+	{
+		path: '/Profile',
+		name: 'Profile',
+		layout: "dashboard",
+		meta: {
+			layoutClass: 'layout-profile',
+		},
+		component: () => import('../views/Profile.vue'),
+	},
+	{
+		path: '/sign-in',
+		name: 'Sign-In',
+		component: () => import('../views/Sign-In.vue'),
+	},
+	{
+		path: '/sign-up',
+		name: 'Sign-Up',
+		meta: {
+			layoutClass: 'layout-sign-up',
+		},
+		component: () => import('../views/Sign-Up.vue'),
+	},
+]
 
-  return Router
+// Adding layout property from each route to the meta
+// object so it can be accessed later.
+function addLayoutToRoute( route, parentLayout = "default" )
+{
+	route.meta = route.meta || {} ;
+	route.meta.layout = route.layout || parentLayout ;
+	
+	if( route.children )
+	{
+		route.children = route.children.map( ( childRoute ) => addLayoutToRoute( childRoute, route.meta.layout ) ) ;
+	}
+	return route ;
+}
+
+routes = routes.map( ( route ) => addLayoutToRoute( route ) ) ;
+
+const router = new VueRouter({
+	mode: 'hash',
+	base: process.env.BASE_URL,
+	routes,
+	scrollBehavior (to, from, savedPosition) {
+		if ( to.hash ) {
+			return {
+				selector: to.hash,
+				behavior: 'smooth',
+			}
+		}
+		return {
+			x: 0,
+			y: 0,
+			behavior: 'smooth',
+		}
+	}
 })
+
+export default router
