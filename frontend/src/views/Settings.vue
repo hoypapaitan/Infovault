@@ -114,7 +114,7 @@
 </template>
 
 <script>
-	import { jwtDecode } from 'jwt-decode';
+	import {jwtDecode} from 'jwt-decode';
 	import CardCredit from "../components/Cards/CardCredit"
 	import WidgetSalary from "../components/Widgets/WidgetSalary"
 	import CardPaymentMethods from "../components/Cards/CardPaymentMethods"
@@ -150,13 +150,13 @@
 			name: "AnaLyticsFormat.csv",
 			amount: "Data Management",
 		},
-		{
-			title: "Event Format",
-			code: "Fields required for Event Evaluation",
-			file: "/docs/evaluation-format.csv",
-			name: "EvaluationFormat.csv",
-			amount: "Events",
-		},
+		// {
+		// 	title: "Event Format",
+		// 	code: "Fields required for Event Evaluation",
+		// 	file: "/docs/evaluation-format.csv",
+		// 	name: "EvaluationFormat.csv",
+		// 	amount: "Events",
+		// },
 	] ;
 
 	export default ({

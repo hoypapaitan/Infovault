@@ -59,6 +59,17 @@ $routes->group('gender_analytics/api/v1', function($routes){
 		$routes->post('get/dashboard', 'Analytics::getDashboard');
 	});
 
+	$routes->group('graduates', function($routes){
+		// Create multiple graduate records (expects payload: { csv: [ {...}, ... ] })
+		$routes->post('create/multiple', 'Graduates::createMultiple');
+		// Get list of graduates
+		$routes->get('get/list', 'Graduates::getList');
+		// Update a graduate record (expects payload with id and fields)
+		$routes->post('update', 'Graduates::update');
+		// Delete a graduate record (expects payload { dataId: id })
+		$routes->post('delete', 'Graduates::delete');
+	});
+
 	$routes->group('document', function($routes){
 		$routes->post('create/content', 'DocumentGFPS::addDocumentContent');
 		$routes->post('delete/content', 'DocumentGFPS::deleteDocumentContent');

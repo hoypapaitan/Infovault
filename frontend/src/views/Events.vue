@@ -330,9 +330,24 @@
 		},
 		computed:{
 			user: function(){
-				let token = localStorage.getItem('userToken')
-				return jwtDecode(token);
+				// Robust token read: support raw token string or JSON-wrapped object { value: '...' }
+				let raw = localStorage.getItem('userToken')
+				if(!raw) return null
+				let tokenString = raw
+				try{
+					const parsed = JSON.parse(raw)
+					if(parsed && parsed.value) tokenString = parsed.value
+				} catch(e){
+					// not JSON, assume raw token string
+				}
+				try{
+					return jwtDecode(tokenString)
+				} catch(e){
+					console.error('Failed to decode JWT token', e)
+					return null
+				}
 			},
+
 			getGADTotal(){
 				let gadTot = this.questionaireList.reduce((a, b) => Number(a) + Number(b.scoreCol), 0)
 				return gadTot

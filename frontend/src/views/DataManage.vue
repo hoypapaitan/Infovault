@@ -103,6 +103,10 @@
 					:data="filteredUser"
 					:columns="columns"
 					@updateTable="getList"
+					@delete="handleDelete"
+					@view="handleView"
+					@edit="handleEdit"
+					@upload="handleUpload"
 				></CardAuthorTable>
 				<!-- / Authors Table Card -->
 			</a-col>
@@ -115,6 +119,7 @@
 			v-model="addUSerModal"
 			title="Add Data"
 			centered
+			@ok="uploadCSVData(csvData)"
 		>
 			<a-alert
 				message="Notes"
@@ -141,6 +146,51 @@
 			<a href="/docs/analytics_data-format.csv" download="analytics_data-format.csv" target="_blank">Click Here to Download Template</a>
 		</a-modal>
 
+		<!-- View Details Modal -->
+		<a-modal v-model="viewModal" title="View Graduate Details" footer="" centered>
+			<div v-if="viewRecord">
+				<p><strong>Name:</strong> {{ viewRecord.name }}</p>
+				<p><strong>Address:</strong> {{ viewRecord.address }}</p>
+				<p><strong>Batch:</strong> {{ viewRecord.batch }}</p>
+				<p><strong>Year Graduated:</strong> {{ viewRecord.yearGraduated }}</p>
+				<p><strong>Advisory ID:</strong> {{ viewRecord.advisoryId }}</p>
+				<p><strong>Section:</strong> {{ viewRecord.section }}</p>
+				<p><strong>Course:</strong> {{ viewRecord.course }}</p>
+				<p><strong>Major:</strong> {{ viewRecord.major }}</p>
+				<p><strong>Created At:</strong> {{ viewRecord.created_at }}</p>
+			</div>
+		</a-modal>
+
+		<!-- Edit Details Modal -->
+		<a-modal v-model="editModal" title="Edit Graduate Record" @ok="saveEdit" :confirmLoading="editSaving">
+			<a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+				<a-form-item label="Name">
+					<a-input v-model="editRecord.name" />
+				</a-form-item>
+				<a-form-item label="Address">
+					<a-input v-model="editRecord.address" />
+				</a-form-item>
+				<a-form-item label="Batch">
+					<a-input v-model="editRecord.batch" />
+				</a-form-item>
+				<a-form-item label="Year Graduated">
+					<a-input v-model="editRecord.yearGraduated" />
+				</a-form-item>
+				<a-form-item label="Advisory ID">
+					<a-input-number v-model="editRecord.advisoryId" />
+				</a-form-item>
+				<a-form-item label="Section">
+					<a-input v-model="editRecord.section" />
+				</a-form-item>
+				<a-form-item label="Course">
+					<a-input v-model="editRecord.course" />
+				</a-form-item>
+				<a-form-item label="Major">
+					<a-input v-model="editRecord.major" />
+				</a-form-item>
+			</a-form>
+		</a-modal>
+
 		<ModalPrintReport
 			:openPrint="openPrint"
 			:dataVal="filteredUser"
@@ -150,7 +200,7 @@
 </template>
 
 <script>
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 import * as d3 from "d3"
 
 // "Authors" table component.
@@ -166,64 +216,53 @@ export default ({
 		
 		filteredUser(){
 			return this.users.filter(el => 
-				this.selectedCourseFilter.includes(el.course) && 
-				this.selectedSchoolYearFilter.includes(el.yearFrom) && 
-				this.selectedReportTypeFilter.includes(el.reportType)
+				(this.selectedCourseFilter.length ? this.selectedCourseFilter.includes(el.course) : true) &&
+				(this.selectedSchoolYearFilter.length ? this.selectedSchoolYearFilter.includes(el.yearGraduated) : true)
 			)
 			
 			// return this.users
 		},
 		columns(){
 			return [
-				{
-					title: 'ID',
-					dataIndex: 'id'
-				},
-				{
-					title: 'Course',
-					dataIndex: 'course',
-				},
-				{
-					title: 'Year Recorded',
-					dataIndex: 'yearFrom',
-					key: 'yearFrom',
-				},
-				{
-					title: 'Type of Report',
-					dataIndex: 'reportType',
-				},
-				{
-					title: 'Year',
-					dataIndex: 'classYear',
-				},
-				{
-					title: 'School Term',
-					dataIndex: 'term',
-				},
-				{
-					title: 'Male',
-					dataIndex: 'male',
-				},
-				{
-					title: 'Female',
-					dataIndex: 'female',
-				},
-				{
-					title: 'Action',
-					scopedSlots: { 
-						customRender: 'action' 
-					},
-				},
+				{ title: 'ID', dataIndex: 'id' },
+				{ title: 'Name', dataIndex: 'name' },
+				{ title: 'Address', dataIndex: 'address' },
+				{ title: 'Batch', dataIndex: 'batch' },
+				{ title: 'Year Graduated', dataIndex: 'yearGraduated' },
+				{ title: 'Advisory ID', dataIndex: 'advisoryId' },
+				{ title: 'Section', dataIndex: 'section' },
+				{ title: 'Course', dataIndex: 'course' },
+				{ title: 'Major', dataIndex: 'major' },
+				{ title: 'Created At', dataIndex: 'created_at' },
+				{ title: 'Action', scopedSlots: { customRender: 'action' } },
 			];
 		},
 		user: function(){
-			let token = localStorage.getItem('userToken')
-			token = JSON.parse(token);
-			return jwtDecode(token.value);
+			// Robust token read: support raw token string or JSON-wrapped object { value: '...' }
+			let raw = localStorage.getItem('userToken')
+			if(!raw) return null
+			let tokenString = raw
+			try{
+				const parsed = JSON.parse(raw)
+				if(parsed && parsed.value) tokenString = parsed.value
+			} catch(e){
+				// not JSON, assume raw token string
+			}
+			try{
+				return jwtDecode(tokenString)
+			} catch(e){
+				console.error('Failed to decode JWT token', e)
+				return null
+			}
 		},
 	},
-	data() {
+		data() {
 		return {
+			viewModal: false,
+			viewRecord: {},
+			editModal: false,
+			editRecord: {},
+			editSaving: false,
 			addUSerModal: false,
 			// Associating "Authors" table columns with its corresponding property.
 			users: [],
@@ -239,25 +278,6 @@ export default ({
 			selectedCourseFilter: [],
 			schoolYearFilter: [],
 			selectedSchoolYearFilter: [],
-			reportTypeFilter: [
-				{
-					label: "Enrollment",
-					value: "enrollment"
-				},
-				{
-					label: "Graduate",
-					value: "graduate"
-				},
-				{
-					label: "Employee",
-					value: "employee"
-				},
-			],
-			selectedReportTypeFilter: [
-				"enrollment",
-				"graduate",
-				"employee"
-			],
 		}
 	},
 	created(){
@@ -304,87 +324,115 @@ export default ({
 			return `"${formatted}"`
 		},
 		async getFile(data){
-			// console.log(file)
-			// return
+			console.log(this.user)
 			var reader = new FileReader();
-			// let filePath = data.file.originFileObj
 			let filePath = data
-			reader.readAsText(new Blob(
-				[filePath],
-				{"type": filePath.type}
-			))
+			reader.readAsText(new Blob([filePath], { type: filePath.type }))
 			const fileContent = await new Promise(resolve => {
 				reader.onloadend = (event) => {
-				resolve(event.target.result)
+					resolve(event.target.result)
 				}
 			})
 			let csvData = d3.csvParse(fileContent)
-			
-
-			csvData = csvData.map((el) => {
-				return {
-				...el,
+			// console.log(csvData)
+			// return
+			// Normalize CSV columns to match tblgraduate schema
+			this.csvData = csvData.map((rec) => ({
+				name: rec.name || '',
+				address: rec.address || '',
+				batch: rec.batch || '',
+				yearGraduated: rec.yearGraduated || rec.year_graduated || rec['Year Graduated'] || '',
+				advisoryId: rec.advisoryId || rec.advisory_id || rec.advisory || null,
+				section: rec.section || '',
+				course: rec.course || '',
+				major: rec.major || '',
 				createdBy: Number(this.user.userId)
-				}
-			})
+			}))
 
-			this.uploadCSVData(csvData)
 			return false
 		},
 		async uploadCSVData(data){
-			const dataUploaded = await new Promise((resolve, reject) => {
-				let payload = {
-					csv: data
+			try{
+				const res = await this.$api.post('graduates/create/multiple', { csv: data })
+				const response = res.data
+				if(!response.error){
+					this.getList()
+					this.addUSerModal = false
+				} else {
+					console.error('Upload error', response)
 				}
-				this.$api.post("analytics/add/new", payload).then((res) => {
-					let response = {...res.data}
-					if(!response.error){
-						resolve({
-							message: 'Upload complete'
-						})
-					} else {
-						// show Error
-						console.log('there is some error')
-						reject()
-					}
-				})
-			})
-		
-			this.$emit('updateTable')
-			this.addUSerModal = false
-		
+			} catch(err){
+				console.error(err)
+			}
 		},
 		async getList(){
 			this.users = []
 			this.usersOrig = []
-			this.$api.get("analytics/get/list").then((res) => {
+			this.$api.get("graduates/get/list").then((res) => {
 				let response = {...res.data}
 				if(!response.error){
-				response.list.sort((a, b) => +(a.yearFrom < b.yearFrom) || -(a.yearFrom > b.yearFrom))
-				this.users = response.list
-				this.usersOrig = response.list
+					let grads = response.list
+					// sort by created_at or id
+					grads.sort((a, b) => +(a.id < b.id) || -(a.id > b.id))
+					this.users = grads
+					this.usersOrig = grads
 
-				let courses = []
-				let sy = []
-				response.list.forEach(element => {
-					courses.push({
-						label: element.course,
-						value: element.course
-					})
-					sy.push({
-						label: element.yearFrom,
-						value: element.yearFrom
-					})
-				});
-				this.courseFilter = courses.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
-				this.selectedCourseFilter = this.courseFilter.map(el => el.value)
-				this.schoolYearFilter = sy.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
-				this.selectedSchoolYearFilter = this.schoolYearFilter.map(el => el.value)
+					let courses = []
+					let sy = []
+					grads.forEach(element => {
+						courses.push({ label: element.course, value: element.course })
+						sy.push({ label: element.yearGraduated, value: element.yearGraduated })
+					});
+					this.courseFilter = courses.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
+					this.selectedCourseFilter = this.courseFilter.map(el => el.value)
+					this.schoolYearFilter = sy.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
+					this.selectedSchoolYearFilter = this.schoolYearFilter.map(el => el.value)
 				} else {
-				// show Error
-				console.log('there is some error')
+					console.log('there is some error')
 				}
 			})
+		},
+
+		async handleUpload(csvData){
+			// csvData comes from child component as parsed array
+			await this.uploadCSVData(csvData)
+		},
+
+		async handleDelete(rec){
+			const payload = { dataId: rec.id }
+			this.$api.post('graduates/delete', payload).then((res) => {
+				const response = res.data
+				if(!response.error){
+					this.getList()
+				} else {
+					console.error('Delete failed', response)
+				}
+			}).catch(err => console.error(err))
+		},
+
+		handleView(rec){
+			this.viewRecord = rec
+			this.viewModal = true
+		},
+
+		handleEdit(rec){
+			this.editRecord = Object.assign({}, rec)
+			this.editModal = true
+		},
+
+		async saveEdit(){
+			this.editSaving = true
+			const payload = Object.assign({}, this.editRecord)
+			this.$api.post('graduates/update', payload).then((res) => {
+				const response = res.data
+				this.editSaving = false
+				if(!response.error){
+					this.editModal = false
+					this.getList()
+				} else {
+					console.error('Update failed', response)
+				}
+			}).catch(err => { this.editSaving = false; console.error(err) })
 		},
 		
 	}

@@ -226,6 +226,33 @@ INSERT INTO `tblevents` (`id`, `title`, `eventDate`, `eventCode`, `month`, `days
 	(8, 'Event 2.2', '"2025-01-09"', 'evnt2', 1, 9, 2025, 'this is testing event that can asdsadsada sadasdada', 0, '2025-01-07 00:37:45'),
 	(9, 'Event 2', '"2025-01-10"', 'evnt2', 1, 10, 2025, 'this is testing event that can asdsadsada', 0, '2025-01-07 00:37:45');
 
+-- Dumping structure for table infovault_db.tblgraduates
+CREATE TABLE IF NOT EXISTS `tblgraduates` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` text,
+  `address` text,
+  `batch` varchar(50) DEFAULT NULL,
+  `yearGraduated` varchar(50) DEFAULT NULL,
+  `advisoryId` int DEFAULT NULL,
+  `section` text,
+  `course` text,
+  `major` text,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table infovault_db.tblgraduates: ~0 rows (approximately)
+DELETE FROM `tblgraduates`;
+INSERT INTO `tblgraduates` (`id`, `name`, `address`, `batch`, `yearGraduated`, `advisoryId`, `section`, `course`, `major`, `created_at`, `updated_at`, `deleted_at`, `created_by`) VALUES
+	(1, 'Carrasco, Julie Luh Gutierrez', 'Brgy. Lual, Casiguran, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
+	(2, 'Coralde, Amie Rubio', 'Brgy. 02, Casiguran, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
+	(3, 'Nazareno, Raymond Arimboyutan', 'Brgy. North Pob., Dipaculao, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
+	(4, 'Panganiban, Vergenita Lamar', 'Brgy. Pingit, Baler, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
+	(5, 'Tecson, Harold Trinidad', 'Brgy. Florida, Maria Aurora, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1);
+
 -- Dumping structure for table infovault_db.tblusers
 CREATE TABLE IF NOT EXISTS `tblusers` (
   `id` int NOT NULL AUTO_INCREMENT,

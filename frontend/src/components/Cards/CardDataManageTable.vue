@@ -27,13 +27,17 @@
 			</template>
 
 			<template slot="action" slot-scope="action">
-				<a-popconfirm 
-					title="Are you sure you want to delete this data？" 
-					@confirm="deleteDataAnalytics(action)"
-					ok-text="Yes" cancel-text="No"
-				>
-					<a-button type="danger" icon="delete" />
-				</a-popconfirm>
+				<a-space>
+					<a-button type="default" icon="eye" @click="$emit('view', action)" />
+					<a-button type="primary" icon="edit" @click="$emit('edit', action)" />
+					<a-popconfirm 
+						title="Are you sure you want to delete this data？" 
+						@confirm="deleteDataAnalytics(action)"
+						ok-text="Yes" cancel-text="No"
+					>
+						<a-button type="danger" icon="delete" />
+					</a-popconfirm>
+				</a-space>
 			</template>
 
 
@@ -74,7 +78,7 @@
 </template>
 
 <script>
-import { jwtDecode } from 'jwt-decode';
+import jwtDecode from 'jwt-decode';
 import * as d3 from "d3"
 	export default ({
 		props: {
@@ -118,25 +122,20 @@ import * as d3 from "d3"
 		},
 		computed:{
 			user: function(){
-				let token = localStorage.getItem('userToken')
-				return jwtDecode(token);
+				let raw = localStorage.getItem('userToken')
+				if(!raw) return null
+				let tokenString = raw
+				try{
+					const parsed = JSON.parse(raw)
+					if(parsed && parsed.value) tokenString = parsed.value
+				} catch(e){ }
+				try{ return jwtDecode(tokenString) } catch(e){ console.error('Failed to decode JWT', e); return null }
 			},
 		},
 		methods:{
 			deleteDataAnalytics(val){
-				console.log(val)
-				let payload = {
-					dataId: val.id
-				}
-				this.$api.post("analytics/delete/data", payload).then((res) => {
-					let response = {...res.data}
-					if(!response.error){
-						this.$emit('updateTable')
-					} else {
-						// show Error
-						console.log('there is some error')
-					}
-				})
+				// Emit delete event to parent so parent can use the correct API endpoint
+				this.$emit('delete', val)
 			},
 			async getFile(data){
 				// console.log(file)
@@ -163,28 +162,13 @@ import * as d3 from "d3"
 					}
 				})
 
-				this.uploadCSVData(csvData)
+				// emit upload event to parent (parent will call the API endpoint)
+				this.$emit('upload', csvData)
 				return false
 			},
 			async uploadCSVData(data){
-				const dataUploaded = await new Promise((resolve, reject) => {
-					let payload = {
-						csv: data
-					}
-					this.$api.post("analytics/add/new", payload).then((res) => {
-						let response = {...res.data}
-						if(!response.error){
-							resolve({
-								message: 'Upload complete'
-							})
-						} else {
-							// show Error
-							console.log('there is some error')
-							reject()
-						}
-					})
-				})
-			
+				// previously this called the API directly; now emit upload so parent handles endpoint
+				this.$emit('upload', data)
 				this.$emit('updateTable')
 				this.addUSerModal = false
 			

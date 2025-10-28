@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import { jwtDecode } from 'jwt-decode';
+import jwtDecode from 'jwt-decode';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 	
 export default ({
@@ -110,11 +110,25 @@ export default ({
     },
 	computed: {
       user: function(){
-        let token = localStorage.getItem('userToken')
-        // token = JSON.parse(token);
-        return jwtDecode(token);
+        // Robust token read: support raw token string or JSON-wrapped object { value: '...' }
+        let raw = localStorage.getItem('userToken')
+        if(!raw) return null
+        let tokenString = raw
+        try{
+          const parsed = JSON.parse(raw)
+          if(parsed && parsed.value) tokenString = parsed.value
+        } catch(e){
+          // not JSON, assume raw token string
+        }
+        try{
+          return jwtDecode(tokenString)
+        } catch(e){
+          console.error('Failed to decode JWT token', e)
+          return null
+        }
       }
     },
+
 	methods:{
     async changeResource(val){
       console.log(val)
