@@ -25,9 +25,8 @@ import router from './router'
 import './scss/app.scss';
 
 const baseURL = process.env.NODE_ENV === 'development' ? 
-'http://localhost:8080/index.php/gender_analytics/api/v1' : 
-'https://thesis-ascots-endpoints.site/gender-analytics/backend/public/gender_analytics/api/v1'
-// const baseURL = 'https://thesis-ascots-endpoints.site/gender-analytics/backend/public/gender_analytics/api/v1'
+'http://localhost:8080/infovault/api/v1' : 
+''
 
 const api = axios.create({ baseURL })
 

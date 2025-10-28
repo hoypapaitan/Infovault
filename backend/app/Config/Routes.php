@@ -34,7 +34,7 @@ $routes->setAutoRoute(true);
 // route since we don't have to scan directories.
 $routes->get('/', 'Home::index');
 
-$routes->group('gender_analytics/api/v1', function($routes){
+$routes->group('infovault/api/v1', function($routes){
 	$routes->group('auth', function($routes){
 		$routes->post('login', 'Auth::login');
 		$routes->post('firstLoginChange', 'Auth::firstLoginChangePassword');
