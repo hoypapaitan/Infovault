@@ -26,7 +26,7 @@ import './scss/app.scss';
 
 const baseURL = process.env.NODE_ENV === 'development' ? 
 'http://localhost:8080/infovault/api/v1' : 
-''
+'/infovault/api/v1'
 
 const api = axios.create({ baseURL })
 
@@ -42,6 +42,19 @@ api.interceptors.request.use(
   },
   error => {
       Promise.reject(error)
+  }
+);
+
+// Add response interceptor to handle API errors
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 500) {
+      console.error('Server Error:', error.response.data);
+      // Don't throw 500 errors to prevent app crashes
+      return Promise.resolve({ data: null, error: true });
+    }
+    return Promise.reject(error);
   }
 );
 

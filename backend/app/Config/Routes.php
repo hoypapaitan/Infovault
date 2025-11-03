@@ -57,6 +57,22 @@ $routes->group('infovault/api/v1', function($routes){
 		$routes->post('get/graph/dashboard', 'Analytics::getGraphDashboardAnalytics');
 		$routes->post('get/graph/options', 'Analytics::getGraphAnalyticOptions');
 		$routes->post('get/dashboard', 'Analytics::getDashboard');
+		
+		// Enhanced dashboard analytics routes
+		$routes->post('dashboard/summary', 'Analytics::getDashboardSummary');
+		$routes->post('course/analytics', 'Analytics::getCourseAnalytics');
+		$routes->get('filter/options', 'Analytics::getFilterOptions');
+	});
+
+	$routes->group('graduate-analytics', function($routes){
+		// Graduate-only analytics for dashboard
+		$routes->get('dashboard/summary', 'GraduateAnalytics::getDashboardSummary');
+		$routes->get('filter/options', 'GraduateAnalytics::getFilterOptions');
+		
+		// Additional endpoints for frontend compatibility
+		$routes->get('options', 'GraduateAnalytics::getFilterOptions');
+		$routes->get('summary', 'GraduateAnalytics::getDashboardSummary');
+		$routes->get('list', 'GraduateAnalytics::getGraduatesList');
 	});
 
 	$routes->group('graduates', function($routes){

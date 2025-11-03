@@ -324,7 +324,6 @@ export default ({
 			return `"${formatted}"`
 		},
 		async getFile(data){
-			console.log(this.user)
 			var reader = new FileReader();
 			let filePath = data
 			reader.readAsText(new Blob([filePath], { type: filePath.type }))

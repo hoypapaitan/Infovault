@@ -5,11 +5,6 @@ Vue.use(VueRouter)
 
 let routes = [
 	{
-		// will match everything
-		path: '*',
-		component: () => import('../views/404.vue'),
-	},
-	{
 		path: '/',
 		name: 'Home',
 		redirect: '/sign-in',
@@ -18,9 +13,6 @@ let routes = [
 		path: '/dashboard',
 		name: 'Dashboard',
 		layout: "dashboard",
-		// route level code-splitting
-		// this generates a separate chunk (about.[hash].js) for this route
-		// which is lazy-loaded when the route is visited.
 		component: () => import(/* webpackChunkName: "dashboard" */ '../views/Dashboard.vue'),
 	},
 	{
@@ -65,8 +57,6 @@ let routes = [
 		layout: "dashboard",
 		component: () => import('../views/Evaluation.vue'),
 	},
-
-
 	{
 		path: '/layout',
 		name: 'Layout',
@@ -119,6 +109,16 @@ let routes = [
 		},
 		component: () => import('../views/Sign-Up.vue'),
 	},
+	{
+		path: '/404',
+		name: '404',
+		component: () => import('../views/404.vue'),
+	},
+	{
+		// will match everything else - keep this last
+		path: '*',
+		redirect: '/404',
+	},
 ]
 
 // Adding layout property from each route to the meta
@@ -155,5 +155,22 @@ const router = new VueRouter({
 		}
 	}
 })
+
+// Global error handling for route navigation
+router.onError((error) => {
+	console.error('Router Error:', error);
+	// Redirect to 404 page on routing errors
+	router.push('/404').catch(() => {});
+});
+
+// Navigation guards to handle loading errors
+router.beforeEach((to, from, next) => {
+	try {
+		next();
+	} catch (error) {
+		console.error('Navigation Error:', error);
+		next('/404');
+	}
+});
 
 export default router
