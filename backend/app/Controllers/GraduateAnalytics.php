@@ -21,13 +21,18 @@ class GraduateAnalytics extends BaseController
         $courseDistribution = $this->getCourseDistribution($fromYear, $toYear);
         $genderAnalysis = $this->getGenderAnalysis($fromYear, $toYear);
         $courseMetrics = $this->getCourseMetrics($fromYear, $toYear);
+        $achievementAnalysis = $this->getAchievementAnalysis($fromYear, $toYear);
         
         $result = [
-            'graduates' => $graduateStats,
-            'yearlyTrends' => $yearlyTrends,
+            'status' => 'success',
+            'summary' => [
+                'graduates' => $graduateStats,
+                'yearlyTrends' => $yearlyTrends,
+            ],
             'courseDistribution' => $courseDistribution,
             'genderAnalysis' => $genderAnalysis,
             'courseMetrics' => $courseMetrics,
+            'achievementAnalysis' => $achievementAnalysis,
             'timeRange' => ['from' => $fromYear, 'to' => $toYear]
         ];
         
@@ -40,7 +45,6 @@ class GraduateAnalytics extends BaseController
         // Get available years from graduates table
         $years = $this->graduatesModel->select('DISTINCT yearGraduated as year')
                                      ->where('yearGraduated IS NOT NULL')
-                                     ->where('deleted_at IS NULL')
                                      ->orderBy('yearGraduated', 'DESC')
                                      ->get()
                                      ->getResult();
@@ -49,7 +53,6 @@ class GraduateAnalytics extends BaseController
         $courses = $this->graduatesModel->select('DISTINCT course')
                                        ->where('course IS NOT NULL')
                                        ->where('course !=', '')
-                                       ->where('deleted_at IS NULL')
                                        ->orderBy('course', 'ASC')
                                        ->get()
                                        ->getResult();
@@ -58,7 +61,6 @@ class GraduateAnalytics extends BaseController
         $batches = $this->graduatesModel->select('DISTINCT batch')
                                        ->where('batch IS NOT NULL')
                                        ->where('batch !=', '')
-                                       ->where('deleted_at IS NULL')
                                        ->orderBy('batch', 'DESC')
                                        ->get()
                                        ->getResult();
@@ -81,12 +83,11 @@ class GraduateAnalytics extends BaseController
         $offset = ($page - 1) * $limit;
         
         // Get total count
-        $total = $this->graduatesModel->where('deleted_at IS NULL')->countAllResults(false);
+        $total = $this->graduatesModel->countAllResults(false);
         
         // Get graduates data
-        $graduates = $this->graduatesModel->where('deleted_at IS NULL')
-                                         ->orderBy('yearGraduated', 'DESC')
-                                         ->orderBy('fullName', 'ASC')
+        $graduates = $this->graduatesModel->orderBy('yearGraduated', 'DESC')
+                                         ->orderBy('name', 'ASC')
                                          ->limit($limit, $offset)
                                          ->get()
                                          ->getResultArray();
@@ -110,21 +111,20 @@ class GraduateAnalytics extends BaseController
     }
     
     private function getGraduatesSummary($fromYear, $toYear){
-        // Get total graduates count with gender breakdown using name patterns (basic approach)
+        // Get total graduates count with gender breakdown using actual gender field
         $graduates = $this->graduatesModel->select('
                 COUNT(*) as total,
                 SUM(CASE 
-                    WHEN name LIKE "%a" OR name LIKE "%e" OR name LIKE "%i" 
+                    WHEN gender = "Female" OR gender = "female" OR gender = "F" OR gender = "f"
                     THEN 1 ELSE 0 
-                END) as estimated_female,
+                END) as female,
                 SUM(CASE 
-                    WHEN name NOT LIKE "%a" AND name NOT LIKE "%e" AND name NOT LIKE "%i" 
+                    WHEN gender = "Male" OR gender = "male" OR gender = "M" OR gender = "m"
                     THEN 1 ELSE 0 
-                END) as estimated_male
+                END) as male
             ')
             ->where('yearGraduated >=', $fromYear)
             ->where('yearGraduated <=', $toYear)
-            ->where('deleted_at IS NULL')
             ->get()
             ->getRow();
         
@@ -133,17 +133,16 @@ class GraduateAnalytics extends BaseController
                 yearGraduated,
                 COUNT(*) as total,
                 SUM(CASE 
-                    WHEN name LIKE "%a" OR name LIKE "%e" OR name LIKE "%i" 
+                    WHEN gender = "Female" OR gender = "female" OR gender = "F" OR gender = "f"
                     THEN 1 ELSE 0 
-                END) as estimated_female,
+                END) as female,
                 SUM(CASE 
-                    WHEN name NOT LIKE "%a" AND name NOT LIKE "%e" AND name NOT LIKE "%i" 
+                    WHEN gender = "Male" OR gender = "male" OR gender = "M" OR gender = "m"
                     THEN 1 ELSE 0 
-                END) as estimated_male
+                END) as male
             ')
             ->where('yearGraduated >=', $fromYear)
             ->where('yearGraduated <=', $toYear)
-            ->where('deleted_at IS NULL')
             ->groupBy('yearGraduated')
             ->orderBy('yearGraduated', 'ASC')
             ->get()
@@ -152,8 +151,8 @@ class GraduateAnalytics extends BaseController
         return [
             'total' => [
                 'combined' => (int)$graduates->total,
-                'male' => (int)$graduates->estimated_male,
-                'female' => (int)$graduates->estimated_female
+                'male' => (int)$graduates->male,
+                'female' => (int)$graduates->female
             ],
             'yearly' => $yearlyGraduates
         ];
@@ -163,7 +162,6 @@ class GraduateAnalytics extends BaseController
         $trends = $this->graduatesModel->select('yearGraduated, COUNT(*) as total')
                                       ->where('yearGraduated >=', $fromYear)
                                       ->where('yearGraduated <=', $toYear)
-                                      ->where('deleted_at IS NULL')
                                       ->groupBy('yearGraduated')
                                       ->orderBy('yearGraduated', 'ASC')
                                       ->get()
@@ -192,7 +190,6 @@ class GraduateAnalytics extends BaseController
             ')
             ->where('yearGraduated >=', $fromYear)
             ->where('yearGraduated <=', $toYear)
-            ->where('deleted_at IS NULL')
             ->groupBy('course')
             ->orderBy('total', 'DESC')
             ->get()
@@ -225,7 +222,6 @@ class GraduateAnalytics extends BaseController
             ')
             ->where('yearGraduated >=', $fromYear)
             ->where('yearGraduated <=', $toYear)
-            ->where('deleted_at IS NULL')
             ->groupBy('yearGraduated')
             ->orderBy('yearGraduated', 'ASC')
             ->get()
@@ -251,7 +247,6 @@ class GraduateAnalytics extends BaseController
             ')
             ->where('yearGraduated >=', $fromYear)
             ->where('yearGraduated <=', $toYear)
-            ->where('deleted_at IS NULL')
             ->groupBy('course')
             ->orderBy('total_graduates', 'DESC')
             ->get()
@@ -269,5 +264,57 @@ class GraduateAnalytics extends BaseController
         }
         
         return $courseMetrics;
+    }
+
+    private function getAchievementAnalysis($fromYear, $toYear) {
+        // Get achievement distribution
+        $achievements = $this->graduatesModel
+            ->select('achievement, COUNT(*) as count')
+            ->where('yearGraduated >=', $fromYear)
+            ->where('yearGraduated <=', $toYear)
+            ->where('achievement IS NOT NULL')
+            ->where('achievement !=', '')
+            ->groupBy('achievement')
+            ->orderBy('count', 'DESC')
+            ->get()
+            ->getResult();
+
+        // Get total graduates for percentage calculation
+        $totalGraduates = $this->graduatesModel
+            ->where('yearGraduated >=', $fromYear)
+            ->where('yearGraduated <=', $toYear)
+            ->countAllResults();
+
+        $achievementData = [];
+        foreach($achievements as $achievement) {
+            $percentage = $totalGraduates > 0 ? round(((int)$achievement->count / $totalGraduates) * 100, 1) : 0;
+            $achievementData[] = [
+                'type' => strtolower(str_replace(' ', '_', $achievement->achievement)),
+                'title' => $achievement->achievement,
+                'count' => (int)$achievement->count,
+                'percentage' => $percentage,
+                'color' => $this->getAchievementColor($achievement->achievement)
+            ];
+        }
+
+        return $achievementData;
+    }
+
+    private function getAchievementColor($achievement) {
+        // Define colors for different achievement types
+        $colors = [
+            'cum laude' => '#52c41a',
+            'magna cum laude' => '#1890ff', 
+            'summa cum laude' => '#722ed1',
+            'research excellence' => '#faad14',
+            'leadership awards' => '#eb2f96',
+            'dean\'s list' => '#13c2c2',
+            'academic excellence' => '#f5222d',
+            'best thesis' => '#fa8c16',
+            'outstanding graduate' => '#a0d911'
+        ];
+        
+        $key = strtolower($achievement);
+        return $colors[$key] ?? '#595959'; // Default gray color
     }
 }

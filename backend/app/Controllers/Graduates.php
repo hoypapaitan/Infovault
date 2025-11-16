@@ -10,6 +10,66 @@ class Graduates extends BaseController
     }
 
     /**
+     * Create a single graduate record
+     * Expects JSON with graduate data
+     */
+    public function create(){
+        $data = $this->request->getJSON(true);
+
+        if(!isset($data['name']) || empty($data['name'])){
+            $response = ['title'=>'Bad Request','message'=>'Name is required'];
+            return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        }
+
+        // Map incoming data
+        $row = [];
+        $row['name'] = $data['name'] ?? null;
+        $row['address'] = $data['address'] ?? null;
+        $row['batch'] = $data['batch'] ?? null;
+        $row['yearGraduated'] = $data['yearGraduated'] ?? ($data['year_graduated'] ?? null);
+        $row['advisoryId'] = $data['advisoryId'] ?? ($data['advisory_id'] ?? null);
+        $row['section'] = $data['section'] ?? null;
+        $row['course'] = $data['course'] ?? null;
+        $row['major'] = $data['major'] ?? null;
+        $row['achievement'] = $data['achievement'] ?? null;
+        $row['gender'] = $data['gender'] ?? null;
+        $row['created_by'] = $data['created_by'] ?? ($data['createdBy'] ?? 0);
+
+        // Check for duplicates before inserting
+        $duplicate = $this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course']);
+        if($duplicate){
+            $response = [
+                'error' => true,
+                'title' => 'Duplicate Entry',
+                'message' => 'A graduate with the same name, year, and course already exists'
+            ];
+
+            return $this->response
+                    ->setStatusCode(409)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+
+        $inserted = $this->graduatesModel->insert($row);
+
+        if($inserted){
+            $response = [
+                'title' => 'Data Added',
+                'message' => 'Graduate data successfully added',
+                'id' => $inserted
+            ];
+
+            return $this->response
+                    ->setStatusCode(200)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+
+        $response = ['title'=>'Creation Failed','message'=>'Unable to create record'];
+        return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+    }
+
+    /**
      * Create multiple graduate records from CSV payload
      * Expects JSON: { csv: [ {...}, ... ] }
      */
@@ -34,10 +94,15 @@ class Graduates extends BaseController
             $row['section'] = $payload['section'] ?? null;
             $row['course'] = $payload['course'] ?? null;
             $row['major'] = $payload['major'] ?? null;
+            $row['achievement'] = $payload['achievement'] ?? null;
+            $row['gender'] = $payload['gender'] ?? null;
             // created_by may come as createdBy (camel) from frontend — map it
             $row['created_by'] = $payload['created_by'] ?? ($payload['createdBy'] ?? 0);
 
-            $this->graduatesModel->insert($row);
+            // Check for duplicates before inserting
+            if (!$this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'])) {
+                $this->graduatesModel->insert($row);
+            }
         }
 
         $response = [
@@ -119,6 +184,19 @@ class Graduates extends BaseController
 
         $response = ['title' => 'Error', 'message' => 'No Data Found'];
         return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+    }
+
+    /**
+     * Check for duplicate graduate records based on name, year, and course
+     */
+    private function checkForDuplicate($name, $yearGraduated, $course) {
+        $existing = $this->graduatesModel
+            ->where('name', $name)
+            ->where('yearGraduated', $yearGraduated)
+            ->where('course', $course)
+            ->countAllResults();
+        
+        return $existing > 0;
     }
 
 }

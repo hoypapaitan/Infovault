@@ -23,22 +23,8 @@
 
     <div class="filters-content">
       <a-row :gutter="16">
-        <!-- Year Range Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
-          <a-form-item label="Year Range" class="mb-0">
-            <a-range-picker
-              v-model="filters.yearRange"
-              mode="year"
-              placeholder="['Start Year', 'End Year']"
-              format="YYYY"
-              @change="onYearRangeChange"
-              style="width: 100%"
-            />
-          </a-form-item>
-        </a-col>
-
         <!-- Course Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
+        <a-col :span="24" :md="12" :lg="8" class="mb-16">
           <a-form-item label="Course/School" class="mb-0">
             <a-select
               v-model="filters.course"
@@ -60,24 +46,8 @@
           </a-form-item>
         </a-col>
 
-        <!-- Report Type Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
-          <a-form-item label="Report Type" class="mb-0">
-            <a-select
-              v-model="filters.reportType"
-              placeholder="Select Report Type"
-              @change="onReportTypeChange"
-              style="width: 100%"
-            >
-              <a-select-option value="all">All Types</a-select-option>
-              <a-select-option value="enrollment">Enrollment</a-select-option>
-              <a-select-option value="graduate">Graduates</a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-col>
-
         <!-- Class Year Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
+        <a-col :span="24" :md="12" :lg="8" class="mb-16">
           <a-form-item label="Class Year" class="mb-0">
             <a-select
               v-model="filters.classYear"
@@ -98,69 +68,8 @@
           </a-form-item>
         </a-col>
 
-        <!-- Term Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
-          <a-form-item label="Term" class="mb-0">
-            <a-select
-              v-model="filters.term"
-              placeholder="Select Term"
-              allow-clear
-              @change="onTermChange"
-              style="width: 100%"
-            >
-              <a-select-option value="all">All Terms</a-select-option>
-              <a-select-option 
-                v-for="term in termOptions" 
-                :key="term" 
-                :value="term"
-              >
-                {{ term }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-col>
-
-        <!-- Gender Filter -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
-          <a-form-item label="Gender Analysis" class="mb-0">
-            <a-select
-              v-model="filters.gender"
-              placeholder="Select Gender View"
-              @change="onGenderChange"
-              style="width: 100%"
-            >
-              <a-select-option value="combined">Combined</a-select-option>
-              <a-select-option value="separated">Male/Female</a-select-option>
-              <a-select-option value="male">Male Only</a-select-option>
-              <a-select-option value="female">Female Only</a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-col>
-
-        <!-- Quick Filters -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16">
-          <a-form-item label="Quick Filters" class="mb-0">
-            <a-button-group style="width: 100%">
-              <a-button 
-                :type="filters.quickFilter === 'current-year' ? 'primary' : 'default'"
-                @click="setQuickFilter('current-year')"
-                size="small"
-              >
-                Current Year
-              </a-button>
-              <a-button 
-                :type="filters.quickFilter === 'last-5-years' ? 'primary' : 'default'"
-                @click="setQuickFilter('last-5-years')"
-                size="small"
-              >
-                Last 5 Years
-              </a-button>
-            </a-button-group>
-          </a-form-item>
-        </a-col>
-
         <!-- Apply Filters Button -->
-        <a-col :span="24" :md="12" :lg="6" class="mb-16" style="display: flex; align-items: flex-end;">
+        <a-col :span="24" :md="12" :lg="8" class="mb-16" style="display: flex; align-items: flex-end;">
           <a-button 
             type="primary" 
             icon="search"
@@ -193,8 +102,6 @@
 </template>
 
 <script>
-import moment from 'moment';
-
 export default {
   name: 'DashboardFilters',
   props: {
@@ -216,40 +123,20 @@ export default {
     }
   },
   data() {
-    const currentYear = moment().year();
     return {
       filters: {
-        yearRange: [moment().year(currentYear - 4), moment().year(currentYear)],
         course: 'all',
-        reportType: 'all',
-        classYear: 'all',
-        term: 'all',
-        gender: 'combined',
-        quickFilter: 'last-5-years'
+        classYear: 'all'
       }
     };
   },
   computed: {
     hasActiveFilters() {
       return this.filters.course !== 'all' ||
-             this.filters.reportType !== 'all' ||
-             this.filters.classYear !== 'all' ||
-             this.filters.term !== 'all' ||
-             this.filters.gender !== 'combined' ||
-             this.filters.quickFilter !== 'last-5-years';
+             this.filters.classYear !== 'all';
     },
     activeFiltersList() {
       const activeFilters = [];
-      
-      if (this.filters.yearRange && this.filters.yearRange.length === 2) {
-        activeFilters.push({
-          key: 'yearRange',
-          label: 'Year Range',
-          value: `${this.filters.yearRange[0].format('YYYY')} - ${this.filters.yearRange[1].format('YYYY')}`,
-          closable: false,
-          color: 'green'
-        });
-      }
       
       if (this.filters.course !== 'all') {
         activeFilters.push({
@@ -258,16 +145,6 @@ export default {
           value: this.filters.course,
           closable: true,
           color: 'blue'
-        });
-      }
-      
-      if (this.filters.reportType !== 'all') {
-        activeFilters.push({
-          key: 'reportType',
-          label: 'Report Type',
-          value: this.filters.reportType,
-          closable: true,
-          color: 'purple'
         });
       }
       
@@ -281,79 +158,22 @@ export default {
         });
       }
       
-      if (this.filters.term !== 'all') {
-        activeFilters.push({
-          key: 'term',
-          label: 'Term',
-          value: this.filters.term,
-          closable: true,
-          color: 'cyan'
-        });
-      }
-      
-      if (this.filters.gender !== 'combined') {
-        activeFilters.push({
-          key: 'gender',
-          label: 'Gender',
-          value: this.filters.gender,
-          closable: true,
-          color: 'magenta'
-        });
-      }
-      
       return activeFilters;
     }
   },
   methods: {
-    onYearRangeChange(dates) {
-      this.filters.yearRange = dates;
-      this.emitFiltersChange();
-    },
     onCourseChange(value) {
       this.filters.course = value;
-      this.emitFiltersChange();
-    },
-    onReportTypeChange(value) {
-      this.filters.reportType = value;
       this.emitFiltersChange();
     },
     onClassYearChange(value) {
       this.filters.classYear = value;
       this.emitFiltersChange();
     },
-    onTermChange(value) {
-      this.filters.term = value;
-      this.emitFiltersChange();
-    },
-    onGenderChange(value) {
-      this.filters.gender = value;
-      this.emitFiltersChange();
-    },
-    setQuickFilter(filterType) {
-      const currentYear = moment().year();
-      this.filters.quickFilter = filterType;
-      
-      switch (filterType) {
-        case 'current-year':
-          this.filters.yearRange = [moment().year(currentYear), moment().year(currentYear)];
-          break;
-        case 'last-5-years':
-          this.filters.yearRange = [moment().year(currentYear - 4), moment().year(currentYear)];
-          break;
-      }
-      
-      this.emitFiltersChange();
-    },
     resetFilters() {
-      const currentYear = moment().year();
       this.filters = {
-        yearRange: [moment().year(currentYear - 4), moment().year(currentYear)],
         course: 'all',
-        reportType: 'all',
-        classYear: 'all',
-        term: 'all',
-        gender: 'combined',
-        quickFilter: 'last-5-years'
+        classYear: 'all'
       };
       this.emitFiltersChange();
     },
@@ -362,17 +182,8 @@ export default {
         case 'course':
           this.filters.course = 'all';
           break;
-        case 'reportType':
-          this.filters.reportType = 'all';
-          break;
         case 'classYear':
           this.filters.classYear = 'all';
-          break;
-        case 'term':
-          this.filters.term = 'all';
-          break;
-        case 'gender':
-          this.filters.gender = 'combined';
           break;
       }
       this.emitFiltersChange();
@@ -381,21 +192,7 @@ export default {
       this.emitFiltersChange();
     },
     emitFiltersChange() {
-      // Convert moment objects to strings for API calls
-      const filtersForAPI = {
-        ...this.filters,
-        from: this.filters.yearRange?.[0]?.format('YYYY'),
-        to: this.filters.yearRange?.[1]?.format('YYYY')
-      };
-      
-      this.$emit('filters-changed', filtersForAPI);
-    },
-    getFormattedFilters() {
-      return {
-        ...this.filters,
-        from: this.filters.yearRange?.[0]?.format('YYYY'),
-        to: this.filters.yearRange?.[1]?.format('YYYY')
-      };
+      this.$emit('filters-changed', this.filters);
     }
   },
   mounted() {

@@ -16,6 +16,12 @@
 					</router-link>
 				</a-menu-item>
 				<a-menu-item>
+					<router-link to="/sign-up" class="nav-link" @click="e => e.preventDefault()">
+						<a-icon type="user" :style="{ fontSize: '16px'}" />
+						<span>Register</span>
+					</router-link>
+				</a-menu-item>
+				<!-- <a-menu-item>
 					<router-link to="/about-us" class="nav-link" @click="e => e.preventDefault()">
 						<a-icon type="question" :style="{ fontSize: '16px'}" />
 						<span>About Us</span>
@@ -26,7 +32,7 @@
 						<a-icon type="phone" :style="{ fontSize: '16px'}" />
 						<span>Contact Us</span>
 					</router-link>
-				</a-menu-item>
+				</a-menu-item> -->
 			</a-menu>
 			<!-- / Navigation Menu For Large Screens -->
 

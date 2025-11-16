@@ -88,30 +88,7 @@
 			DashboardSettingsDrawer,
 		},
 		created(){
-			// Robust token read: support raw token string or JSON-wrapped object { value: '...' }
-			let raw = localStorage.getItem('userToken')
-			// if(!raw) {
-			// 	this.$router.push("/")
-			// 	return
-			// }
-			let tokenString = raw
-			// try{
-			// 	const parsed = JSON.parse(raw)
-			// 	if(parsed && parsed.value) tokenString = parsed.value
-			// } catch(e){
-			// 	// not JSON, assume raw token string
-			// }
-			// try{
-				let jwtData = jwtDecode(tokenString)
-				if(jwtData.aud === 'admin'){
-					this.$router.push("/dashboard")
-				} else {
-					this.$router.push("/evaluation")
-				}
-			// } catch(e){
-			// 	console.error('Failed to decode JWT token', e)
-			// 	this.$router.push("/")
-			// }
+			this.$router.push("/dashboard")
 		},
 		data() {
 			return {

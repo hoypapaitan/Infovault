@@ -76,6 +76,8 @@ $routes->group('infovault/api/v1', function($routes){
 	});
 
 	$routes->group('graduates', function($routes){
+		// Create single graduate record
+		$routes->post('create', 'Graduates::create');
 		// Create multiple graduate records (expects payload: { csv: [ {...}, ... ] })
 		$routes->post('create/multiple', 'Graduates::createMultiple');
 		// Get list of graduates

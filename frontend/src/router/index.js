@@ -19,13 +19,12 @@ let routes = [
 		path: '/analytics',
 		name: 'Analytics',
 		layout: "dashboard",
-		component: () => import('../views/Analytics.vue'),
+		component: () => import(/* webpackChunkName: "analytics" */ '../views/AnalyticsDashboard.vue'),
 	},
 	{
 		path: '/userManagement',
 		name: 'UserManagement',
-		layout: "dashboard",
-		component: () => import('../views/Users.vue'),
+		redirect: '/settings',
 	},
 	{
 		path: '/dataManagement',
@@ -105,7 +104,7 @@ let routes = [
 		path: '/sign-up',
 		name: 'Sign-Up',
 		meta: {
-			layoutClass: 'layout-sign-up',
+			layoutClass: 'layout-sign-in',
 		},
 		component: () => import('../views/Sign-Up.vue'),
 	},

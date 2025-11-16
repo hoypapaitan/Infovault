@@ -22,8 +22,8 @@
 			<hr>
 
 			<!-- Sidebar Navigation Menu -->
-			<a-menu v-if="user.aud === 'admin'" theme="light" mode="inline">
-				<a-menu-item>
+			<a-menu v-if="user.aud === 'admin'" theme="light" mode="inline" :selectedKeys="[currentRoute]">
+				<a-menu-item key="dashboard">
 					<router-link to="/dashboard">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="dashboard" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
@@ -31,23 +31,23 @@
 						<span class="label">Dashboard</span>
 					</router-link>
 				</a-menu-item>
-				<!-- <a-menu-item>
+				<a-menu-item key="analytics">
 					<router-link to="/analytics">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="bar-chart" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
 						<span class="label">Analytics</span>
 					</router-link>
-				</a-menu-item> -->
-				<a-menu-item>
+				</a-menu-item>
+				<!-- <a-menu-item key="userManagement">
 					<router-link to="/userManagement">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="user" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
 						<span class="label">User Management</span>
 					</router-link>
-				</a-menu-item>
-				<a-menu-item>
+				</a-menu-item> -->
+				<a-menu-item key="dataManagement">
 					<router-link to="/dataManagement">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="unordered-list" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
@@ -71,7 +71,7 @@
 						<span class="label">Events</span>
 					</router-link>
 				</a-menu-item> -->
-				<a-menu-item>
+				<a-menu-item key="settings">
 					<router-link to="/settings">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="setting" theme="filled" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
@@ -82,13 +82,21 @@
 			</a-menu>
 
 			<!-- Normal User -->
-			<a-menu v-else theme="light" mode="inline">
-				<a-menu-item>
-					<router-link to="/evaluation">
+			<a-menu v-else theme="light" mode="inline" :selectedKeys="[currentRoute]">
+				<a-menu-item key="dashboard">
+					<router-link to="/dashboard">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="dashboard" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
 						<span class="label">Dashboard</span>
+					</router-link>
+				</a-menu-item>
+				<a-menu-item key="analytics">
+					<router-link to="/analytics">
+						<div class="icon" style="text-align: center;">
+							<a-icon type="bar-chart" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
+						</div>
+						<span class="label">Analytics</span>
 					</router-link>
 				</a-menu-item>
 			</a-menu>
@@ -128,6 +136,10 @@
 				let token = localStorage.getItem('userToken')
 				return jwtDecode(token);
 			},
+			currentRoute() {
+				const routeName = this.$route.path.split('/')[1];
+				return routeName || 'dashboard';
+			}
 		},
 		created(){
 			console.log(this.user)

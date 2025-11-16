@@ -51,6 +51,9 @@ class Auth extends BaseController
         if($user){
 
             if($user->status == 1){
+                // Store original userType value before conversion
+                $originalUserType = $user->userType;
+                
                 // $userModules = $user[0]['userType'] == 0 ? ['101', '103', '104', '105'] : ['101', '102'];
 
                 $user->userType = $this->miscModel->getUserType($user->userType);
@@ -68,7 +71,7 @@ class Auth extends BaseController
                 $token = [
                     "fullName" => $user->firstName .' '. $user->lastName,
                     "iss" => $user->email,
-                    "aud" => $user->username,
+                    "aud" => $originalUserType == 1 ? 'admin' : 'others',
                     "iat" => $issueTimeClaim,
                     "nbf" => $notBeforeClaim,
                     "exp" => $expiryClaim,

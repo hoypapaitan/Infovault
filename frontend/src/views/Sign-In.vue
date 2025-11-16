@@ -40,8 +40,13 @@
 							v-decorator="[
 							'password',
 							{ rules: [{ required: true, message: 'Please input your password!' }] },
-							]" type="password" placeholder="Password" >
+							]" 
+							:type="showPassword ? 'text' : 'password'" placeholder="Password" >
 								<template #prefix><a-icon type="lock" /></template>
+								<template #suffix>
+									<a-icon v-if="!showPassword" type="eye" @click="showPassword = !showPassword" />
+									<a-icon v-if="showPassword" type="eye-invisible" @click="showPassword = !showPassword" />
+								</template>
 							</a-input>
 						</a-form-item>
 						<a-form-item class="mb-10">
@@ -65,12 +70,12 @@
 </template>
 
 <script>
-import {jwtDecode} from 'jwt-decode';
 export default ({
 	data() {
 		return {
 			// Binded model property for "Sign In Form" switch button for "Remember Me" .
 			rememberMe: false,
+			showPassword: false,
 		}
 	},
 	beforeCreate() {
@@ -86,13 +91,8 @@ export default ({
 					this.$api.post("auth/login", values).then((res) => {
 						let response = {...res.data}
 						if(!response.error){
-							let jwtData = jwtDecode(response.jwt);
 							localStorage.setItem("userToken", response.jwt)
-							if(jwtData.aud === 'admin'){
-								this.$router.push("/dashboard")
-							} else {
-								this.$router.push("/evaluation")
-							}
+							this.$router.push("/dashboard")
 						} else {
 						// show Error
 							this.$message.error(response.message)
