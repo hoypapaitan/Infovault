@@ -38,6 +38,9 @@ $routes->group('infovault/api/v1', function($routes){
 	$routes->group('auth', function($routes){
 		$routes->post('login', 'Auth::login');
 		$routes->post('firstLoginChange', 'Auth::firstLoginChangePassword');
+		$routes->post('forgot-password', 'Auth::forgotPassword');
+		$routes->post('reset-password', 'Auth::resetPassword');
+		$routes->post('validate-reset-token', 'Auth::validateResetToken');
 	}); 
 
 	$routes->group('users', function($routes){

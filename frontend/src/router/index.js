@@ -101,6 +101,15 @@ let routes = [
 		component: () => import('../views/Sign-In.vue'),
 	},
 	{
+		path: '/reset-password/:token',
+		name: 'ResetPassword',
+		meta: {
+			layoutClass: 'layout-sign-in',
+			noRedirect: true, // Flag to prevent redirect
+		},
+		component: () => import('../views/ResetPassword.vue'),
+	},
+	{
 		path: '/sign-up',
 		name: 'Sign-Up',
 		meta: {
@@ -125,7 +134,10 @@ let routes = [
 function addLayoutToRoute( route, parentLayout = "default" )
 {
 	route.meta = route.meta || {} ;
-	route.meta.layout = route.layout || parentLayout ;
+	// Don't override if layout is explicitly set to false
+	if (route.meta.layout !== false) {
+		route.meta.layout = route.layout || parentLayout ;
+	}
 	
 	if( route.children )
 	{
@@ -137,7 +149,7 @@ function addLayoutToRoute( route, parentLayout = "default" )
 routes = routes.map( ( route ) => addLayoutToRoute( route ) ) ;
 
 const router = new VueRouter({
-	mode: 'hash',
+	mode: 'history',
 	base: process.env.BASE_URL,
 	routes,
 	scrollBehavior (to, from, savedPosition) {
@@ -165,6 +177,11 @@ router.onError((error) => {
 // Navigation guards to handle loading errors
 router.beforeEach((to, from, next) => {
 	try {
+		// Allow access to reset-password without any redirects
+		if (to.name === 'ResetPassword') {
+			next();
+			return;
+		}
 		next();
 	} catch (error) {
 		console.error('Navigation Error:', error);

@@ -250,7 +250,7 @@ class RouteCollection implements RouteCollectionInterface
 	 */
 	public function setDefaultNamespace(string $value): RouteCollectionInterface
 	{
-		$this->defaultNamespace = filter_var($value, FILTER_SANITIZE_STRING);
+		$this->defaultNamespace = filter_var($value, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 		$this->defaultNamespace = rtrim($this->defaultNamespace, '\\') . '\\';
 
 		return $this;
@@ -268,7 +268,7 @@ class RouteCollection implements RouteCollectionInterface
 	 */
 	public function setDefaultController(string $value): RouteCollectionInterface
 	{
-		$this->defaultController = filter_var($value, FILTER_SANITIZE_STRING);
+		$this->defaultController = filter_var($value, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		return $this;
 	}
@@ -285,7 +285,7 @@ class RouteCollection implements RouteCollectionInterface
 	 */
 	public function setDefaultMethod(string $value): RouteCollectionInterface
 	{
-		$this->defaultMethod = filter_var($value, FILTER_SANITIZE_STRING);
+		$this->defaultMethod = filter_var($value, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		return $this;
 	}
@@ -1356,7 +1356,7 @@ class RouteCollection implements RouteCollectionInterface
 		$overwrite = false;
 		$prefix    = is_null($this->group) ? '' : $this->group . '/';
 
-		$from = filter_var($prefix . $from, FILTER_SANITIZE_STRING);
+		$from = filter_var($prefix . $from, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		// While we want to add a route within a group of '/',
 		// it doesn't work with matching, so remove them...

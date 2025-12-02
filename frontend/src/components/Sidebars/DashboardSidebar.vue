@@ -20,9 +20,10 @@
 				<span>Graduate Records Repository</span>
 			</div>
 			<hr>
-
+			
+			
 			<!-- Sidebar Navigation Menu -->
-			<a-menu v-if="user.aud === 'admin'" theme="light" mode="inline" :selectedKeys="[currentRoute]">
+			<a-menu v-if="user.aud === 'admin'" :style="{ marginTop: '28px' }"  theme="light" mode="inline" :selectedKeys="[currentRoute]">
 				<a-menu-item key="dashboard">
 					<router-link to="/dashboard">
 						<div class="icon" style="text-align: center;">
@@ -77,11 +78,11 @@
 							<a-icon type="setting" theme="filled" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
 						<span class="label">Settings</span>
-					</router-link>
-				</a-menu-item>
-			</a-menu>
-
-			<!-- Normal User -->
+				</router-link>
+			</a-menu-item>
+			
+		</a-menu>
+		<!-- Normal User -->
 			<a-menu v-else theme="light" mode="inline" :selectedKeys="[currentRoute]">
 				<a-menu-item key="dashboard">
 					<router-link to="/dashboard">
@@ -96,13 +97,19 @@
 						<div class="icon" style="text-align: center;">
 							<a-icon type="bar-chart" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
-						<span class="label">Analytics</span>
-					</router-link>
-				</a-menu-item>
-			</a-menu>
-			<!-- / Sidebar Navigation Menu -->
-
-			
+					<span class="label">Analytics</span>
+			</router-link>
+		</a-menu-item>
+	</a-menu>
+	
+	<!-- Logout Button -->
+	<div style="padding: 16px;">
+		<a-button type="danger" block @click="handleLogout" size="large">
+			<a-icon type="logout" />
+			Logout
+		</a-button>
+	</div>
+	<!-- / Sidebar Navigation Menu -->
 	</a-layout-sider>
 	<!-- / Main Sidebar -->
 
@@ -149,6 +156,25 @@
 				// sidebarCollapsedModel: this.sidebarCollapsed,
 			}
 		},
+		methods: {
+			handleLogout() {
+				this.$confirm({
+					title: 'Logout Confirmation',
+					content: 'Are you sure you want to logout?',
+					okText: 'Yes, Logout',
+					okType: 'danger',
+					cancelText: 'Cancel',
+					onOk: () => {
+						localStorage.removeItem('userToken');
+						this.$message.success('Logged out successfully');
+						this.$router.push('/sign-in');
+					},
+					onCancel() {
+						// Do nothing
+					},
+				});
+			}
+		}
 	})
 
 </script>

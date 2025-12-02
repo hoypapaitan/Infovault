@@ -189,4 +189,226 @@ class Auth extends BaseController
         }
     }
 
+    public function forgotPassword(){
+        // Get API Request Data from Frontend
+        $data = $this->request->getJSON();
+        
+        // Validate username and email match
+        $user = $this->userModel->where([
+            'username' => $data->username, 
+            'email' => $data->email
+        ])->first();
+        
+        // Check if user exists with matching username and email
+        if(!$user){
+            $response = [
+                'error' => 404,
+                'title' => 'User Not Found',
+                'message' => 'The email address may not exist or does not match the username provided.'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(404)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+        
+        // Generate password reset token
+        $token = bin2hex(random_bytes(32));
+        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour')); // Token expires in 1 hour
+        
+        // Store token in database (you may need to create a password_resets table)
+        $db = \Config\Database::connect();
+        $builder = $db->table('tblpassword_resets');
+        
+        // Delete any existing tokens for this email
+        $builder->where('email', $data->email)->delete();
+        
+        // Insert new token
+        $builder->insert([
+            'email' => $data->email,
+            'token' => $token,
+            'expiry' => $expiry,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        // Send email with reset link
+        $email = \Config\Services::email();
+        
+        // Configure email settings (you may need to update these in app/Config/Email.php)
+        $resetLink = "http://localhost:8083/reset-password/" . $token;
+        
+        $email->setFrom('noreply@ascot.edu.ph', 'ASCOT InfoVault');
+        $email->setTo($data->email);
+        $email->setSubject('Password Reset Request - ASCOT InfoVault');
+        
+        $message = "
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #1890ff; color: white; padding: 20px; text-align: center; }
+                .content { padding: 30px; background-color: #f5f5f5; }
+                .button { 
+                    display: inline-block; 
+                    padding: 12px 30px; 
+                    background-color: #1890ff; 
+                    color: white; 
+                    text-decoration: none; 
+                    border-radius: 4px; 
+                    margin: 20px 0;
+                }
+                .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h2>Password Reset Request</h2>
+                </div>
+                <div class='content'>
+                    <p>Hello " . $user['firstName'] . " " . $user['lastName'] . ",</p>
+                    <p>We received a request to reset your password for your ASCOT InfoVault account.</p>
+                    <p>Click the button below to reset your password:</p>
+                    <p style='text-align: center;'>
+                        <a href='" . $resetLink . "' class='button'>Reset Password</a>
+                    </p>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style='word-break: break-all; color: #1890ff;'>" . $resetLink . "</p>
+                    <p><strong>This link will expire in 1 hour.</strong></p>
+                    <p>If you didn't request a password reset, please ignore this email.</p>
+                </div>
+                <div class='footer'>
+                    <p>&copy; 2025 ASCOT InfoVault. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        ";
+        
+        $email->setMessage($message);
+        
+        if($email->send()){
+            $response = [
+                'success' => true,
+                'title' => 'Email Sent',
+                'message' => 'A password reset link has been sent to your email address.'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(200)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        } else {
+            $response = [
+                'error' => 500,
+                'title' => 'Email Failed',
+                'message' => 'Failed to send reset email. Please try again later.',
+                'debug' => $email->printDebugger(['headers'])
+            ];
+            
+            return $this->response
+                    ->setStatusCode(500)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+    }
+
+    public function resetPassword(){
+        // Get API Request Data from Frontend
+        $data = $this->request->getJSON();
+        
+        // Validate token
+        $db = \Config\Database::connect();
+        $builder = $db->table('tblpassword_resets');
+        
+        $resetRecord = $builder->where('token', $data->token)
+                              ->where('expiry >=', date('Y-m-d H:i:s'))
+                              ->get()
+                              ->getRow();
+        
+        if(!$resetRecord){
+            $response = [
+                'error' => 400,
+                'title' => 'Invalid Token',
+                'message' => 'The password reset link is invalid or has expired.'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(400)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+        
+        // Update user password
+        $hashedPassword = sha1($data->newPassword);
+        
+        $updated = $this->userModel->where('email', $resetRecord->email)
+                                   ->set(['password' => $hashedPassword])
+                                   ->update();
+        
+        if($updated){
+            // Delete used token
+            $builder->where('token', $data->token)->delete();
+            
+            $response = [
+                'success' => true,
+                'title' => 'Password Reset Successful',
+                'message' => 'Your password has been successfully reset. You can now login with your new password.'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(200)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        } else {
+            $response = [
+                'error' => 500,
+                'title' => 'Reset Failed',
+                'message' => 'Failed to reset password. Please try again.'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(500)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+    }
+
+    public function validateResetToken(){
+        // Validate if token is still valid
+        $data = $this->request->getJSON();
+        
+        $db = \Config\Database::connect();
+        $builder = $db->table('tblpassword_resets');
+        
+        $resetRecord = $builder->where('token', $data->token)
+                              ->where('expiry >=', date('Y-m-d H:i:s'))
+                              ->get()
+                              ->getRow();
+        
+        if($resetRecord){
+            $response = [
+                'valid' => true,
+                'email' => $resetRecord->email
+            ];
+            
+            return $this->response
+                    ->setStatusCode(200)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        } else {
+            $response = [
+                'valid' => false,
+                'message' => 'Token is invalid or expired'
+            ];
+            
+            return $this->response
+                    ->setStatusCode(400)
+                    ->setContentType('application/json')
+                    ->setBody(json_encode($response));
+        }
+    }
+
 }

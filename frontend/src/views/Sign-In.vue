@@ -49,58 +49,174 @@
 								</template>
 							</a-input>
 						</a-form-item>
-						<a-form-item class="mb-10">
-							<a-switch v-model="rememberMe" /> Remember Me
-						</a-form-item>
-						<a-form-item>
-							<a-button type="primary" block html-type="submit" class="login-form-button">
-								SIGN IN
-							</a-button>
-						</a-form-item>
-					</a-form>
-					<!-- / Sign In Form -->
-					
-				</a-card>
+					<a-form-item class="mb-10">
+						<a-switch v-model="rememberMe" /> Remember Me
+					</a-form-item>
+				<a-form-item>
+					<a-button type="primary" block html-type="submit" class="login-form-button" :loading="loginLoading">
+						SIGN IN
+					</a-button>
+				</a-form-item>
+					<a-form-item>
+						<a-button
+							type="link"
+							block
+							:disabled="!usernameFilled"
+							@click="showForgotModal = true"
+							class="forgot-password-button"
+						>
+							Forgot Password?
+						</a-button>
+					</a-form-item>
+				</a-form>
+				<!-- / Sign In Form -->				</a-card>
 				<!-- / Sign Up Form -->
 
 			</div>
 		</div>
 		<!-- / Sign Up Image And Headings -->
+
+		<!-- Forgot Password Modal -->
+		<a-modal
+			v-model="showForgotModal"
+			title="Forgot Password"
+			:footer="null"
+			@cancel="handleForgotCancel"
+		>
+			<div>
+				<p class="mb-10">Please enter the email address registered to your username:</p>
+				<a-input
+					v-model="forgotEmail"
+					placeholder="Registered Email Address"
+					type="email"
+					class="mb-15"
+				>
+					<template #prefix><a-icon type="mail" /></template>
+				</a-input>
+				<a-button
+					type="primary"
+					block
+					:disabled="!forgotEmail"
+					:loading="resetLoading"
+					@click="handleResetPassword"
+				>
+					Reset Password
+				</a-button>
+			</div>
+		</a-modal>
 	</div>
 </template>
 
 <script>
-export default ({
+export default {
 	data() {
 		return {
-			// Binded model property for "Sign In Form" switch button for "Remember Me" .
 			rememberMe: false,
 			showPassword: false,
+			showForgotModal: false,
+			forgotEmail: '',
+			resetLoading: false,
+			usernameValue: '',
+			loginLoading: false,
+		}
+	},
+	computed: {
+		usernameFilled() {
+			return !!this.usernameValue && this.usernameValue.trim().length > 0;
 		}
 	},
 	beforeCreate() {
-		// Creates the form and adds to it component's "form" property.
-		this.form = this.$form.createForm(this, { name: 'normal_login' });
+		this.form = this.$form.createForm(this, { 
+			name: 'normal_login',
+			onFieldsChange: (props, fields) => {
+				if (fields.username) {
+					this.usernameValue = fields.username.value || '';
+				}
+			}
+		});
 	},
 	methods: {
-		// Handles input validation after submission.
 		handleSubmit(e) {
 			e.preventDefault();
+			console.log('Form submitted');
+			
 			this.form.validateFields((err, values) => {
-				if ( !err ) {
-					this.$api.post("auth/login", values).then((res) => {
+				if (err) {
+					console.log('Validation error:', err);
+					return;
+				}
+				
+				console.log('Form validated, calling API with:', values);
+				console.log('API Base URL:', this.$api.defaults.baseURL);
+				this.loginLoading = true;
+				
+				this.$api.post("auth/login", values)
+					.then((res) => {
+						console.log('API response received:', res);
+						console.log('Response status:', res.status);
+						this.loginLoading = false;
 						let response = {...res.data}
+						
 						if(!response.error){
 							localStorage.setItem("userToken", response.jwt)
+							this.$message.success('Login successful!');
 							this.$router.push("/dashboard")
 						} else {
-						// show Error
-							this.$message.error(response.message)
+							this.$message.error(response.message || 'Login failed')
 						}
 					})
-				}
+					.catch((error) => {
+						console.error('API error:', error);
+						console.error('Error response:', error.response);
+						console.error('Error request:', error.request);
+						this.loginLoading = false;
+						
+						if (error.response) {
+							this.$message.error(`Server error: ${error.response.status}`);
+						} else if (error.request) {
+							this.$message.error('No response from server. Check if backend is running on http://localhost:8080');
+						} else {
+							this.$message.error('An error occurred during login.');
+						}
+					});
 			});
 		},
+		handleForgotCancel() {
+			this.showForgotModal = false;
+			this.forgotEmail = '';
+			this.resetLoading = false;
+		},
+		handleResetPassword() {
+			const username = this.form.getFieldValue('username');
+			
+			if (!username || !username.trim()) {
+				this.$message.error('Username is required.');
+				return;
+			}
+			
+			if (!this.forgotEmail || !this.forgotEmail.trim()) {
+				this.$message.error('Please enter your registered email address.');
+				return;
+			}
+			
+			this.resetLoading = true;
+			
+			this.$api.post('auth/forgot-password', {
+				username: username.trim(),
+				email: this.forgotEmail.trim()
+			}).then(res => {
+				this.resetLoading = false;
+				if (res.data && !res.data.error) {
+					this.$message.success('Password reset instructions have been sent to your email.');
+					this.handleForgotCancel();
+				} else {
+					this.$message.error(res.data.message || 'Failed to process password reset request.');
+				}
+			}).catch(err => {
+				this.resetLoading = false;
+				this.$message.error('An error occurred while processing your request.');
+			});
+		}
 	},
-})
+}
 </script>

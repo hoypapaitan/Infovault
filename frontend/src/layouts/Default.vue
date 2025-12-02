@@ -40,11 +40,29 @@
 			}
 		},
 		created(){
+			// Debug logging
+			console.log('Default.vue created - Route:', this.$route.name);
+			console.log('Route meta:', this.$route.meta);
+			console.log('noRedirect flag:', this.$route.meta.noRedirect);
+			
+			// Don't redirect if route hasn't loaded yet
+			if (!this.$route.name) {
+				console.log('Route not loaded yet, skipping redirect');
+				return;
+			}
+			
+			// Don't redirect if route has noRedirect flag
+			if (this.$route.meta.noRedirect) {
+				console.log('Skipping redirect due to noRedirect flag');
+				return;
+			}
+			
 			let token = localStorage.getItem('userToken')
 			if(token){
 				this.$router.push("/dashboard")
 			} else {
-				this.$router.push("/")
+				console.log('No token, redirecting to sign-in');
+				this.$router.push("/sign-in")
 			}
 		},
 		computed: {

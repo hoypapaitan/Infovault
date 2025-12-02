@@ -7,9 +7,10 @@
 
 <template>
 	<div id="app">
-		<component :is="layout">
+		<component v-if="layout" :is="layout">
 			<router-view />
 		</component>
+		<router-view v-else />
 	</div>
 </template>
 
@@ -20,7 +21,12 @@
 			// Sets components name based on current route's specified layout, defaults to
 			// <layout-default></layout-default> component.
 			layout() {
-				return "layout-" + ( this.$route.meta.layout || "default" ).toLowerCase() ;
+				const routeLayout = this.$route.meta.layout;
+				// If layout is explicitly set to false, return null (no layout)
+				if (routeLayout === false) {
+					return null;
+				}
+				return "layout-" + ( routeLayout || "default" ).toLowerCase() ;
 			}
 		},
 	})

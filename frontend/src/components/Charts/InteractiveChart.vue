@@ -1,4 +1,3 @@
-<!-- Enhanced Interactive Dashboard Chart Component -->
 <template>
   <a-card :bordered="false" class="header-solid h-full ant-card-p-0">
     <template #title>
@@ -7,10 +6,10 @@
           <h6 class="font-semibold m-0">{{ title }}</h6>
           <p class="text-muted">{{ description }}</p>
         </a-col>
-        <a-col :span="24" :md="12" class="col-info">
+        <a-col :span="24" :md="12" class="col-info" style="text-align: right;">
           <a-select
             v-if="showTypeSelector"
-            v-model="selectedChartType"
+            v-model:value="selectedChartType"
             style="width: 120px"
             @change="onChartTypeChange"
           >
@@ -23,37 +22,30 @@
       </a-row>
     </template>
 
-    <div class="chart-container" style="position: relative; height: 400px;">
+    <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
       <LineChart
-        v-if="selectedChartType === 'line'"
-        :chart-data="chartData"
-        :options="chartOptions"
+        v-if="selectedChartType === 'line' || selectedChartType === 'area'"
+        :data="computedChartData"
+        :options="computedOptions"
         :chart-id="chartId"
-        :width="400"
-        :height="400"
       />
       <BarChart
         v-else-if="selectedChartType === 'bar'"
-        :chart-data="chartData"
-        :options="chartOptions"
+        :data="computedChartData"
+        :options="computedOptions"
         :chart-id="chartId"
-        :width="400"
-        :height="400"
       />
       <DoughnutChart
         v-else-if="selectedChartType === 'pie'"
-        :chart-data="pieChartData"
+        :data="pieChartData"
         :options="pieChartOptions"
         :chart-id="chartId"
-        :width="400"
-        :height="400"
       />
     </div>
 
-    <!-- Chart Legend/Stats -->
     <template #actions>
-      <a-row v-if="showStats" :gutter="16" class="chart-stats">
-        <a-col v-for="stat in stats" :key="stat.label" :span="8">
+      <a-row v-if="showStats" :gutter="16" class="chart-stats" type="flex" justify="space-around">
+        <a-col v-for="stat in stats" :key="stat.label">
           <a-statistic
             :title="stat.label"
             :value="stat.value"
@@ -61,7 +53,7 @@
             :value-style="{ color: stat.color }"
           >
             <template #prefix>
-              <a-icon :type="stat.icon" v-if="stat.icon" />
+              <component :is="stat.icon" v-if="stat.icon" />
             </template>
           </a-statistic>
         </a-col>
@@ -108,42 +100,15 @@ export default {
     DoughnutChart
   },
   props: {
-    title: {
-      type: String,
-      default: 'Chart Title'
-    },
-    description: {
-      type: String,
-      default: 'Chart description'
-    },
-    chartData: {
-      type: Object,
-      required: true
-    },
-    chartOptions: {
-      type: Object,
-      default: () => ({})
-    },
-    chartType: {
-      type: String,
-      default: 'line'
-    },
-    showTypeSelector: {
-      type: Boolean,
-      default: true
-    },
-    showStats: {
-      type: Boolean,
-      default: true
-    },
-    stats: {
-      type: Array,
-      default: () => []
-    },
-    chartId: {
-      type: String,
-      default: () => `chart-${Math.random().toString(36).substr(2, 9)}`
-    }
+    title: { type: String, default: 'Chart Title' },
+    description: { type: String, default: 'Chart description' },
+    chartData: { type: Object, required: true },
+    chartOptions: { type: Object, default: () => ({}) },
+    chartType: { type: String, default: 'line' },
+    showTypeSelector: { type: Boolean, default: true },
+    showStats: { type: Boolean, default: true },
+    stats: { type: Array, default: () => [] },
+    chartId: { type: String, default: () => `chart-${Math.random().toString(36).substr(2, 9)}` }
   },
   data() {
     return {
@@ -151,43 +116,58 @@ export default {
     };
   },
   computed: {
-    pieChartData() {
-      if (this.selectedChartType !== 'pie') return this.chartData;
+    // FIX 1 & 2: Handle Area Charts and generic Options
+    computedChartData() {
+      // Clone data to avoid mutating prop
+      const dataCopy = JSON.parse(JSON.stringify(this.chartData));
       
-      // Convert line/bar data to pie chart format
-      const datasets = this.chartData.datasets || [];
-      const labels = this.chartData.labels || [];
-      
-      if (datasets.length > 0) {
-        const data = datasets[0].data || [];
-        const backgroundColor = datasets.map((_, index) => 
-          `hsl(${(index * 360) / datasets.length}, 70%, 60%)`
-        );
-        
-        return {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: backgroundColor,
-            borderWidth: 2,
-            borderColor: '#fff'
-          }]
-        };
+      if (this.selectedChartType === 'area') {
+        dataCopy.datasets = dataCopy.datasets.map(dataset => ({
+          ...dataset,
+          fill: true, // This makes it an Area chart
+          // Add transparency to area color if not present
+          backgroundColor: dataset.backgroundColor || 'rgba(24, 144, 255, 0.2)'
+        }));
       }
-      
-      return this.chartData;
+      return dataCopy;
+    },
+    computedOptions() {
+      return {
+        ...this.chartOptions,
+        responsive: true,
+        maintainAspectRatio: false, // Important for CSS resizing
+      };
+    },
+    // FIX 3: Fix Pie Chart Color Logic
+    pieChartData() {
+      // Use the first dataset for the pie chart
+      const sourceDataset = this.chartData.datasets?.[0] || { data: [] };
+      const dataValues = sourceDataset.data || [];
+      const labels = this.chartData.labels || [];
+
+      // Generate a color for EACH DATA POINT, not each dataset
+      const backgroundColors = dataValues.map((_, index) => 
+        `hsl(${(index * 360) / dataValues.length}, 70%, 60%)`
+      );
+
+      return {
+        labels: labels,
+        datasets: [{
+          data: dataValues,
+          backgroundColor: backgroundColors,
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 4
+        }]
+      };
     },
     pieChartOptions() {
       return {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            position: 'bottom'
-          },
-          title: {
-            display: false
-          }
+          legend: { position: 'right' },
+          title: { display: false }
         }
       };
     }
@@ -198,8 +178,11 @@ export default {
     }
   },
   methods: {
-    onChartTypeChange(type) {
-      this.$emit('chart-type-changed', type);
+    onChartTypeChange(value) {
+      // Ant Design Vue 2/3 uses 'value' or 'change' depending on version
+      // 'value' is passed directly in @change
+      this.$emit('update:chartType', value); // Supports v-model on parent
+      this.$emit('chart-type-changed', value);
     }
   }
 };
@@ -207,16 +190,16 @@ export default {
 
 <style lang="scss" scoped>
 .chart-container {
-  padding: 16px 0;
+  padding: 10px;
+  /* Ensure canvas doesn't overflow */
+  canvas {
+    max-height: 100%;
+    max-width: 100%;
+  }
 }
 
-.chart-stats {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.ant-card-p-0 .ant-card-body {
-  padding: 24px 24px 0 24px;
+.col-info {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

@@ -71,11 +71,11 @@
 							<a-col :span="24" :md="12">
 								<h5 class="font-semibold m-0">User Management</h5>
 							</a-col>
-							<a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-								<a-button type="primary" @click="addUserModal = true"> 
-									<a-icon type="user-add" />Add New User 
-								</a-button>
-							</a-col>
+						<a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+							<a-button v-if="isAdmin" type="primary" @click="addUserModal = true"> 
+								<a-icon type="user-add" />Add New User 
+							</a-button>
+						</a-col>
 						</a-row>
 					</template>
 					<a-table :columns="userColumns" :data-source="users" :pagination="false">
@@ -89,11 +89,11 @@
 							</a-tag>
 						</template>
 
-						<template slot="editBtn" slot-scope="row">
-							<a-button type="link" :data-id="row.key" @click="editUser(row)" class="btn-edit">
-								Edit
-							</a-button>
-						</template>
+					<template slot="editBtn" slot-scope="row">
+						<a-button v-if="isAdmin" type="link" :data-id="row.key" @click="editUser(row)" class="btn-edit">
+							Edit
+						</a-button>
+					</template>
 					</a-table>
 				</a-card>
 			</a-col>
@@ -360,6 +360,9 @@
 			user: function(){
 				let token = localStorage.getItem('userToken')
 				return jwtDecode(token);
+			},
+			isAdmin: function () {
+				return this.user && this.user.aud === 'admin'
 			},
 			userColumns() {
 				return [

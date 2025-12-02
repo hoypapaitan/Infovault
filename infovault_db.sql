@@ -23,6 +23,7 @@ USE `infovault_db`;
 CREATE TABLE IF NOT EXISTS `tblgraduates` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` text,
+  `studentId` text,
   `address` text,
   `batch` varchar(50) DEFAULT NULL,
   `yearGraduated` varchar(50) DEFAULT NULL,
@@ -35,16 +36,25 @@ CREATE TABLE IF NOT EXISTS `tblgraduates` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `created_by` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table infovault_db.tblgraduates: ~5 rows (approximately)
+-- Dumping data for table infovault_db.tblgraduates: ~0 rows (approximately)
 DELETE FROM `tblgraduates`;
-INSERT INTO `tblgraduates` (`id`, `name`, `address`, `batch`, `yearGraduated`, `advisoryId`, `section`, `course`, `major`, `created_at`, `updated_at`, `deleted_at`, `created_by`) VALUES
-	(1, 'Carrasco, Julie Luh Gutierrez', 'Brgy. Lual, Casiguran, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
-	(2, 'Coralde, Amie Rubio', 'Brgy. 02, Casiguran, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
-	(3, 'Nazareno, Raymond Arimboyutan', 'Brgy. North Pob., Dipaculao, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
-	(4, 'Panganiban, Vergenita Lamar', 'Brgy. Pingit, Baler, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1),
-	(5, 'Tecson, Harold Trinidad', 'Brgy. Florida, Maria Aurora, Aurora', '2023-2024', '2024', NULL, '', 'MASTER OF ARTS IN EDUCATION (MAEd)', 'Major in Educational Management', '2025-10-27 19:37:05', '2025-10-27 19:37:05', NULL, 1);
+
+-- Dumping structure for table infovault_db.tblpassword_resets
+CREATE TABLE IF NOT EXISTS `tblpassword_resets` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `token` varchar(64) COLLATE utf8mb4_general_ci NOT NULL,
+  `expiry` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `email` (`email`),
+  KEY `token` (`token`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table infovault_db.tblpassword_resets: ~0 rows (approximately)
+DELETE FROM `tblpassword_resets`;
 
 -- Dumping structure for table infovault_db.tblusers
 CREATE TABLE IF NOT EXISTS `tblusers` (
@@ -65,12 +75,13 @@ CREATE TABLE IF NOT EXISTS `tblusers` (
   `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table infovault_db.tblusers: ~1 rows (approximately)
+-- Dumping data for table infovault_db.tblusers: ~0 rows (approximately)
 DELETE FROM `tblusers`;
 INSERT INTO `tblusers` (`id`, `username`, `password`, `firstName`, `lastName`, `middleName`, `suffix`, `sex`, `email`, `contact`, `address`, `userType`, `status`, `isDeleted`, `createdAt`, `updatedAt`) VALUES
-	(1, 'admin', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'Firsts', 'Users', 'Admin', ' ', 'Male', 'test@mail.com', '09876543212', 'test address', 1, 1, 0, '2024-10-12 14:35:21', '2024-10-12 14:35:21');
+	(1, 'admin', 'cbfdac6008f9cab4083784cbd1874f76618d2a97', 'Firsts', 'Users', 'Admin', ' ', 'Male', 'jommelcabiles.dev@gmail.com', '09876543212', 'test address', 1, 1, 0, '2024-10-12 14:35:21', '2024-10-12 14:35:21'),
+	(4, 'coor', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'dasd', 'sadasd', 'fff', '', 'Male', '', '098634423', '', 2, 1, 0, '2025-12-02 16:33:43', '2025-12-02 16:33:43');
 
 -- Dumping structure for table infovault_db.tblusertypes
 CREATE TABLE IF NOT EXISTS `tblusertypes` (

@@ -5,198 +5,176 @@ use App\Models\GraduatesModel;
 
 class Graduates extends BaseController
 {
+    protected $graduatesModel;
+
     public function __construct(){
         $this->graduatesModel = new GraduatesModel();
     }
 
     /**
      * Create a single graduate record
-     * Expects JSON with graduate data
      */
     public function create(){
         $data = $this->request->getJSON(true);
 
-        if(!isset($data['name']) || empty($data['name'])){
-            $response = ['title'=>'Bad Request','message'=>'Name is required'];
-            return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        // Validating name and studentId
+        if(!isset($data['name']) || empty($data['name']) || !isset($data['studentId']) || empty($data['studentId'])){
+            $response = ['title'=>'Bad Request','message'=>'Name and Student ID are required'];
+            return $this->response->setStatusCode(400)->setJSON($response);
         }
 
         // Map incoming data
-        $row = [];
-        $row['name'] = $data['name'] ?? null;
-        $row['address'] = $data['address'] ?? null;
-        $row['batch'] = $data['batch'] ?? null;
-        $row['yearGraduated'] = $data['yearGraduated'] ?? ($data['year_graduated'] ?? null);
-        $row['advisoryId'] = $data['advisoryId'] ?? ($data['advisory_id'] ?? null);
-        $row['section'] = $data['section'] ?? null;
-        $row['course'] = $data['course'] ?? null;
-        $row['major'] = $data['major'] ?? null;
-        $row['achievement'] = $data['achievement'] ?? null;
-        $row['gender'] = $data['gender'] ?? null;
-        $row['created_by'] = $data['created_by'] ?? ($data['createdBy'] ?? 0);
+        $row = [
+            'studentId'     => $data['studentId'], // Added Student ID
+            'name'          => $data['name'] ?? null,
+            'address'       => $data['address'] ?? null,
+            'batch'         => $data['batch'] ?? null,
+            'yearGraduated' => $data['yearGraduated'] ?? ($data['year_graduated'] ?? null),
+            'advisoryId'    => $data['advisoryId'] ?? ($data['advisory_id'] ?? null),
+            'section'       => $data['section'] ?? null,
+            'course'        => $data['course'] ?? null,
+            'major'         => $data['major'] ?? null,
+            'achievement'   => $data['achievement'] ?? null,
+            'gender'        => $data['gender'] ?? null,
+            'created_by'    => $data['created_by'] ?? ($data['createdBy'] ?? 0),
+        ];
 
-        // Check for duplicates before inserting
-        $duplicate = $this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course']);
-        if($duplicate){
-            $response = [
-                'error' => true,
-                'title' => 'Duplicate Entry',
-                'message' => 'A graduate with the same name, year, and course already exists'
-            ];
-
-            return $this->response
-                    ->setStatusCode(409)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+        // Check for duplicates (Name+Year+Course OR StudentID)
+        if($this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'], $row['studentId'])){
+            $response = ['error' => true, 'title' => 'Duplicate Entry', 'message' => 'Record (Name or Student ID) already exists'];
+            return $this->response->setStatusCode(409)->setJSON($response);
         }
 
         $inserted = $this->graduatesModel->insert($row);
 
         if($inserted){
-            $response = [
-                'title' => 'Data Added',
-                'message' => 'Graduate data successfully added',
-                'id' => $inserted
-            ];
-
-            return $this->response
-                    ->setStatusCode(200)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+            $response = ['error' => false, 'title' => 'Success', 'message' => 'Graduate data added', 'id' => $inserted];
+            return $this->response->setStatusCode(200)->setJSON($response);
         }
 
-        $response = ['title'=>'Creation Failed','message'=>'Unable to create record'];
-        return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        $response = ['error' => true, 'title'=>'Failed','message'=>'Unable to create record'];
+        return $this->response->setStatusCode(400)->setJSON($response);
     }
 
     /**
-     * Create multiple graduate records from CSV payload
-     * Expects JSON: { csv: [ {...}, ... ] }
+     * Create multiple records
      */
     public function createMultiple(){
         $data = $this->request->getJSON();
 
         if(!isset($data->csv) || !is_array($data->csv)){
-            $response = ['title'=>'Bad Request','message'=>'Invalid payload'];
-            return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+            return $this->response->setStatusCode(400)->setJSON(['title'=>'Bad Request','message'=>'Invalid payload']);
         }
 
-        foreach ($data->csv as $key => $value){
-            // Map incoming keys to match tblgraduate allowedFields
+        foreach ($data->csv as $value){
             $payload = json_decode(json_encode($value), true);
-            $row = [];
-            // normalize common key variants
-            $row['name'] = isset($payload['name']) ? $payload['name'] : (isset($payload['fullName']) ? $payload['fullName'] : null);
-            $row['address'] = $payload['address'] ?? null;
-            $row['batch'] = $payload['batch'] ?? null;
-            $row['yearGraduated'] = $payload['yearGraduated'] ?? ($payload['year_graduated'] ?? null);
-            $row['advisoryId'] = $payload['advisoryId'] ?? ($payload['advisory_id'] ?? null);
-            $row['section'] = $payload['section'] ?? null;
-            $row['course'] = $payload['course'] ?? null;
-            $row['major'] = $payload['major'] ?? null;
-            $row['achievement'] = $payload['achievement'] ?? null;
-            $row['gender'] = $payload['gender'] ?? null;
-            // created_by may come as createdBy (camel) from frontend — map it
-            $row['created_by'] = $payload['created_by'] ?? ($payload['createdBy'] ?? 0);
+            
+            $row = [
+                'studentId'     => $payload['studentId'] ?? ($payload['student_id'] ?? null), // Added mapping
+                'name'          => $payload['name'] ?? ($payload['fullName'] ?? null),
+                'address'       => $payload['address'] ?? null,
+                'batch'         => $payload['batch'] ?? null,
+                'yearGraduated' => $payload['yearGraduated'] ?? ($payload['year_graduated'] ?? null),
+                'advisoryId'    => $payload['advisoryId'] ?? ($payload['advisory_id'] ?? null),
+                'section'       => $payload['section'] ?? null,
+                'course'        => $payload['course'] ?? null,
+                'major'         => $payload['major'] ?? null,
+                'achievement'   => $payload['achievement'] ?? null,
+                'gender'        => $payload['gender'] ?? null,
+                'created_by'    => $payload['created_by'] ?? ($payload['createdBy'] ?? 0),
+            ];
 
-            // Check for duplicates before inserting
-            if (!$this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'])) {
+            // Only insert if no duplicate exists based on composite key OR student ID
+            if (!$this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'], $row['studentId'])) {
                 $this->graduatesModel->insert($row);
             }
         }
 
-        $response = [
-            'title' => 'Data Added',
-            'message' => 'Graduate data successfully added'
-        ];
-
-        return $this->response
-                ->setStatusCode(200)
-                ->setContentType('application/json')
-                ->setBody(json_encode($response));
+        return $this->response->setStatusCode(200)->setJSON(['title' => 'Success', 'message' => 'Batch upload complete']);
     }
 
     /**
-     * Update a graduate record. Expects JSON with id and fields to update.
+     * Update a graduate record
      */
     public function update(){
         $data = $this->request->getJSON(true);
 
         if(!isset($data['id'])){
-            $response = ['title'=>'Bad Request','message'=>'Missing id'];
-            return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+            return $this->response->setStatusCode(400)->setJSON(['error' => true, 'message'=>'Missing id']);
         }
 
         $id = $data['id'];
-        unset($data['id']);
-
-        // map any camelCase to snake_case where needed
-        if(isset($data['createdBy'])){ $data['created_by'] = $data['createdBy']; unset($data['createdBy']); }
-        if(isset($data['yearGraduated'])){ $data['yearGraduated'] = $data['yearGraduated']; }
-
-        $updated = $this->graduatesModel->update($id, $data);
-
-        if($updated){
-            $response = ['title'=>'Update successful','message'=>'Graduate record updated'];
-            return $this->response->setStatusCode(200)->setContentType('application/json')->setBody(json_encode($response));
+        
+        // Whitelist fields to allow update - ADDED studentId
+        $updateData = [];
+        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'section', 'major', 'batch'];
+        
+        foreach($allowed as $field) {
+            if(isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+        
+        if(empty($updateData)){
+            return $this->response->setStatusCode(200)->setJSON(['message'=>'No changes detected']);
         }
 
-        $response = ['title'=>'Update Failed','message'=>'Unable to update record'];
-        return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        // Optional: Check if changing studentId causes collision, usually handled by DB unique constraint error, 
+        // but could add specific check here if desired.
+
+        $updated = $this->graduatesModel->update($id, $updateData);
+
+        if($updated){
+            return $this->response->setStatusCode(200)->setJSON(['error' => false, 'message'=>'Record updated successfully']);
+        }
+
+        return $this->response->setStatusCode(400)->setJSON(['error' => true, 'message'=>'Database update failed']);
     }
 
     /**
-     * Delete a graduate record. Expects JSON: { dataId: id }
+     * Delete a graduate record
      */
     public function delete(){
         $data = $this->request->getJSON();
 
-        if(!isset($data->dataId)){
-            $response = ['title'=>'Bad Request','message'=>'Missing dataId'];
-            return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        if(!isset($data->id)){
+            return $this->response->setStatusCode(400)->setJSON(['error' => true, 'message'=>'Missing id']);
         }
 
+        $deleted = $this->graduatesModel->delete($data->id);
 
-    $where = ['id' => $data->dataId];
-    $del = $this->graduatesModel->deleteGraduate($where);
-
-        if($del){
-            $response = ['title'=>'Delete successful','message'=>'Graduate record deleted'];
-            return $this->response->setStatusCode(200)->setContentType('application/json')->setBody(json_encode($response));
+        if($deleted){
+            return $this->response->setStatusCode(200)->setJSON(['error' => false, 'message'=>'Record deleted successfully']);
         }
 
-        $response = ['title'=>'Delete Failed','message'=>'Unable to delete record'];
-        return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        return $this->response->setStatusCode(400)->setJSON(['error' => true, 'message'=>'Unable to delete record']);
     }
 
     /**
-     * Return list of graduates
+     * Get List
      */
     public function getList(){
-        $list = $this->graduatesModel->get()->getResult();
-
-        if($list){
-            return $this->response
-                    ->setStatusCode(200)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode(['list' => $list]));
-        }
-
-        $response = ['title' => 'Error', 'message' => 'No Data Found'];
-        return $this->response->setStatusCode(400)->setContentType('application/json')->setBody(json_encode($response));
+        $list = $this->graduatesModel->orderBy('yearGraduated', 'DESC')->findAll();
+        return $this->response->setStatusCode(200)->setJSON(['error' => false, 'list' => $list]);
     }
 
     /**
-     * Check for duplicate graduate records based on name, year, and course
+     * Helper: Check duplicate
+     * Checks for either (Name + Year + Course) match OR (Student ID) match
      */
-    private function checkForDuplicate($name, $yearGraduated, $course) {
-        $existing = $this->graduatesModel
-            ->where('name', $name)
-            ->where('yearGraduated', $yearGraduated)
-            ->where('course', $course)
-            ->countAllResults();
+    private function checkForDuplicate($name, $yearGraduated, $course, $studentId = null) {
+        $this->graduatesModel->groupStart()
+                ->where('name', $name)
+                ->where('yearGraduated', $yearGraduated)
+                ->where('course', $course)
+            ->groupEnd();
+            
+        if (!empty($studentId)) {
+            $this->graduatesModel->orWhere('studentId', $studentId);
+        }
         
-        return $existing > 0;
+        $count = $this->graduatesModel->countAllResults();
+        
+        return $count > 0;
     }
-
 }

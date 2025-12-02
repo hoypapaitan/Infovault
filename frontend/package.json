@@ -16,7 +16,7 @@
     "ant-design-vue": "1.7.6",
     "apexcharts": "^4.2.0",
     "axios": "^1.7.9",
-    "chart.js": "3.4.1",
+    "chart.js": "^3.9.1",
     "core-js": "3.15.2",
     "d3": "^7.9.0",
     "firebase": "^11.0.2",
@@ -35,7 +35,7 @@
     "@vue/cli-plugin-router": "4.5.13",
     "@vue/cli-service": "4.5.13",
     "cross-env": "^7.0.3",
-    "node-sass": "^9.0.0",
+    "sass": "^1.94.2",
     "sass-loader": "^10",
     "vue-template-compiler": "2.6.14"
   }

@@ -17,6 +17,7 @@ class GraduatesModel extends Model
 
     // fields based on provided schema
     protected $allowedFields = [
+        'studentId',
         'name',
         'address',
         'batch',

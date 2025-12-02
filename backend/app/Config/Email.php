@@ -4,6 +4,19 @@ namespace Config;
 
 use CodeIgniter\Config\BaseConfig;
 
+/**
+ * Email Configuration
+ * 
+ * IMPORTANT: Email credentials are stored in the .env file for security.
+ * Update the following variables in your .env file:
+ * - email.fromEmail
+ * - email.fromName
+ * - email.SMTPHost
+ * - email.SMTPUser
+ * - email.SMTPPass
+ * - email.SMTPPort
+ * - email.SMTPCrypto
+ */
 class Email extends BaseConfig
 {
 	/**
@@ -33,7 +46,7 @@ class Email extends BaseConfig
 	 *
 	 * @var string
 	 */
-	public $protocol = 'mail';
+	public $protocol = 'smtp';
 
 	/**
 	 * The server path to Sendmail.
@@ -68,7 +81,7 @@ class Email extends BaseConfig
 	 *
 	 * @var integer
 	 */
-	public $SMTPPort = 25;
+	public $SMTPPort;
 
 	/**
 	 * SMTP Timeout (in seconds)
@@ -89,7 +102,7 @@ class Email extends BaseConfig
 	 *
 	 * @var string
 	 */
-	public $SMTPCrypto = 'tls';
+	public $SMTPCrypto;
 
 	/**
 	 * Enable word-wrap
@@ -110,7 +123,7 @@ class Email extends BaseConfig
 	 *
 	 * @var string
 	 */
-	public $mailType = 'text';
+	public $mailType = 'html';
 
 	/**
 	 * Character set (utf-8, iso-8859-1, etc.)
@@ -167,5 +180,22 @@ class Email extends BaseConfig
 	 * @var boolean
 	 */
 	public $DSN = false;
+
+	/**
+	 * Constructor - Load email settings from environment
+	 */
+	public function __construct()
+	{
+		parent::__construct();
+		
+		// Load email configuration from environment variables
+		$this->fromEmail   = getenv('email.fromEmail') ?: 'noreply@ascot.edu.ph';
+		$this->fromName    = getenv('email.fromName') ?: 'ASCOT InfoVault';
+		$this->SMTPHost    = getenv('email.SMTPHost') ?: 'smtp.gmail.com';
+		$this->SMTPUser    = getenv('email.SMTPUser');
+		$this->SMTPPass    = getenv('email.SMTPPass');
+		$this->SMTPPort    = getenv('email.SMTPPort') ?: 587;
+		$this->SMTPCrypto  = getenv('email.SMTPCrypto') ?: 'tls';
+	}
 
 }

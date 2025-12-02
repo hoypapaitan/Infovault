@@ -19,6 +19,7 @@ import App from './App.vue'
 import DefaultLayout from './layouts/Default.vue'
 import DashboardLayout from './layouts/Dashboard.vue'
 import DashboardRTLLayout from './layouts/DashboardRTL.vue'
+import AuthLayout from './layouts/Auth.vue'
 import router from './router'
 // import './plugins/click-away'
 
@@ -66,6 +67,7 @@ Vue.config.productionTip = false
 Vue.component("layout-default", DefaultLayout);
 Vue.component("layout-dashboard", DashboardLayout);
 Vue.component("layout-dashboard-rtl", DashboardRTLLayout);
+Vue.component("layout-auth", AuthLayout);
 
 
 new Vue({
