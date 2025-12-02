@@ -10,6 +10,10 @@ use \Firebase\JWT\JWT;
 
 class Auth extends BaseController
 {
+    protected $authModel;
+    protected $miscModel;
+    protected $userModel;
+
     public function __construct(){
         //Models
         $this->authModel = new AuthModel();
@@ -235,10 +239,13 @@ class Auth extends BaseController
         // Send email with reset link
         $email = \Config\Services::email();
         
+        // Ensure email config is loaded from environment
+        $emailConfig = new \Config\Email();
+        
         // Configure email settings (you may need to update these in app/Config/Email.php)
         $resetLink = "http://localhost:8083/reset-password/" . $token;
         
-        $email->setFrom('noreply@ascot.edu.ph', 'ASCOT InfoVault');
+        $email->setFrom($emailConfig->fromEmail, $emailConfig->fromName);
         $email->setTo($data->email);
         $email->setSubject('Password Reset Request - ASCOT InfoVault');
         

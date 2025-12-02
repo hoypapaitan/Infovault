@@ -189,13 +189,13 @@ class Email extends BaseConfig
 		parent::__construct();
 		
 		// Load email configuration from environment variables
-		$this->fromEmail   = getenv('email.fromEmail') ?: 'noreply@ascot.edu.ph';
-		$this->fromName    = getenv('email.fromName') ?: 'ASCOT InfoVault';
-		$this->SMTPHost    = getenv('email.SMTPHost') ?: 'smtp.gmail.com';
-		$this->SMTPUser    = getenv('email.SMTPUser');
-		$this->SMTPPass    = getenv('email.SMTPPass');
-		$this->SMTPPort    = getenv('email.SMTPPort') ?: 587;
-		$this->SMTPCrypto  = getenv('email.SMTPCrypto') ?: 'tls';
+		$this->fromEmail   = env('email.fromEmail', 'noreply@ascot.edu.ph');
+		$this->fromName    = env('email.fromName', 'ASCOT InfoVault');
+		$this->SMTPHost    = env('email.SMTPHost', 'smtp.gmail.com');
+		$this->SMTPUser    = env('email.SMTPUser', '');
+		$this->SMTPPass    = env('email.SMTPPass', '');
+		$this->SMTPPort    = env('email.SMTPPort', 587);
+		$this->SMTPCrypto  = env('email.SMTPCrypto', 'tls');
 	}
 
 }
