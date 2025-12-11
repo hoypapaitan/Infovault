@@ -48,85 +48,110 @@ class Auth extends BaseController
         $data = $this->request->getJSON(); 
         $hasPass = sha1($data->password);
 
-        //Select Query for finding User Information
-        $user = $this->authModel->where(['username' => $data->username, 'password' => $hasPass])->get()->getRow();
-        
-        //Set Api Response return to the FE
+        // Find user by username
+        $user = $this->authModel->where(['username' => $data->username])->get()->getRow();
+
+        // If user exists
         if($user){
-
-            if($user->status == 1){
-                // Store original userType value before conversion
-                $originalUserType = $user->userType;
-                
-                // $userModules = $user[0]['userType'] == 0 ? ['101', '103', '104', '105'] : ['101', '102'];
-
-                $user->userType = $this->miscModel->getUserType($user->userType);
-                // $userModules =;
-                // $user[0]['usersMod'] = $userModules;
-                // print_r($user);
-
-                // //Set JWT Authorization
-                $secretKey = $this->privateKey();
-                $issueTimeClaim = time();
-                $notBeforeClaim = $issueTimeClaim + 10;
-                $expiryClaim = $issueTimeClaim + 3600;
-
-                // //Generate Token
-                $token = [
-                    "fullName" => $user->firstName .' '. $user->lastName,
-                    "iss" => $user->email,
-                    "aud" => $originalUserType == 1 ? 'admin' : 'others',
-                    "iat" => $issueTimeClaim,
-                    "nbf" => $notBeforeClaim,
-                    "exp" => $expiryClaim,
-                    "userId" => $user->id,
-                    "modules" =>  $user->userType->modules
-                ];
-
-                $jwt = JWT::encode($token, $secretKey, 'RS256');
-
-                $result = [
-                    "fullName" => $user->firstName .' '. $user->lastName,
-                    "userId" => $user->id,
-                    "jwt" => $jwt,
-                    // "userData" => $user
-                ];
-
-
-                return $this->response 
-                        ->setHeader('jwt', $jwt)
-                        ->setStatusCode(200)
-                        ->setContentType('application/json')
-                        ->setBody(json_encode($result));
-            } else {
+            // Check if account is locked
+            if(isset($user->loginAttemps) && $user->loginAttemps >= 5){
                 $response = [
-                    'title' => 'Account Deactivated',
-                    'message' => 'Please contact your adminitrator for more information'
+                    'error' => 403,
+                    'title' => 'Account Locked',
+                    'message' => 'Your account is locked due to too many failed login attempts. Please contact an admin to unlock.'
                 ];
-    
                 return $this->response
-                        ->setStatusCode(404)
+                        ->setStatusCode(403)
                         ->setContentType('application/json')
                         ->setBody(json_encode($response));
             }
-            
+
+            // Check password
+            if($user->password === $hasPass){
+                // If account is active
+                if($user->status == 1){
+                    // Reset login attempts on successful login
+                    $this->authModel->update($user->id, ['loginAttemps' => 0]);
+
+                    $originalUserType = $user->userType;
+                    $user->userType = $this->miscModel->getUserType($user->userType);
+
+                    $secretKey = $this->privateKey();
+                    $issueTimeClaim = time();
+                    $notBeforeClaim = $issueTimeClaim + 10;
+                    $expiryClaim = $issueTimeClaim + 3600;
+
+                    $token = [
+                        "fullName" => $user->firstName .' '. $user->lastName,
+                        "iss" => $user->email,
+                        "aud" => $originalUserType == 1 ? 'admin' : 'others',
+                        "iat" => $issueTimeClaim,
+                        "nbf" => $notBeforeClaim,
+                        "exp" => $expiryClaim,
+                        "userId" => $user->id,
+                        "modules" =>  $user->userType->modules
+                    ];
+
+                    $jwt = JWT::encode($token, $secretKey, 'RS256');
+
+                    $result = [
+                        "fullName" => $user->firstName .' '. $user->lastName,
+                        "userId" => $user->id,
+                        "jwt" => $jwt,
+                    ];
+
+                        return $this->response
+                            ->setStatusCode(200)
+                            ->setJSON($result);
+                } else {
+                    $response = [
+                        'title' => 'Account Deactivated',
+                        'message' => 'Please contact your adminitrator for more information'
+                    ];
+                        return $this->response
+                            ->setStatusCode(404)
+                            ->setJSON($response);
+                }
+            } else {
+                // Password incorrect, increment login attempts
+                $attempts = isset($user->loginAttemps) ? $user->loginAttemps + 1 : 1;
+                $this->authModel->update($user->id, ['loginAttemps' => $attempts]);
+
+                // Lock account if attempts reach 5
+                if($attempts >= 5){
+                    $response = [
+                        'error' => 403,
+                        'title' => 'Account Locked',
+                        'message' => 'Your account is locked due to too many failed login attempts. Please contact an admin to unlock.'
+                    ];
+                        return $this->response
+                            ->setStatusCode(403)
+                            ->setJSON($response);
+                } else {
+                    $response = [
+                        'error' => 404,
+                        'title' => 'Invalid Credentials',
+                        'message' => 'Please check your username or password'
+                    ];
+                    return $this->response
+                            ->setStatusCode(200)
+                            ->setContentType('application/json')
+                            ->setBody(json_encode($response));
+                }
+            }
         } else {
             $response = [
                 'error' => 404,
                 'title' => 'Invalid Credentials',
                 'message' => 'Please check your username or password'
             ];
-
             return $this->response
                     ->setStatusCode(200)
                     ->setContentType('application/json')
                     ->setBody(json_encode($response));
         }
-
-
         // print_r(json_encode($data));
-        
-    }  
+    }
 
     public function reconnect($uid){
         //Get API Request Data from NuxtJs
@@ -149,10 +174,9 @@ class Auth extends BaseController
                 'message' => 'Please check your username or password'
             ];
 
-            return $this->response
-                    ->setStatusCode(404)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+                return $this->response
+                    ->setStatusCode(403)
+                    ->setJSON($response);
         }
 
 
@@ -176,10 +200,9 @@ class Auth extends BaseController
                 'message' => 'Your successfully change password.'
             ];
  
-            return $this->response
+                return $this->response
                     ->setStatusCode(200)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+                    ->setJSON($response);
         } else {
             $response = [
                 'title' => 'Change Password Failed!',
@@ -303,10 +326,9 @@ class Auth extends BaseController
                 'message' => 'A password reset link has been sent to your email address.'
             ];
             
-            return $this->response
+                return $this->response
                     ->setStatusCode(200)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+                    ->setJSON($response);
         } else {
             $response = [
                 'error' => 500,

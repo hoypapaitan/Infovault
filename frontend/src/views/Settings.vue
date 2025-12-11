@@ -530,6 +530,17 @@
 				let payload = {}
 				let api = "users/create"
 
+				// Password format validation (only for registration, not edit)
+				if(this.formMode !== 'edit'){
+					const password = this.userForm.password || '';
+					const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+					if(!passwordRegex.test(password)){
+						this.$message.error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
+						this.userFormLoading = false;
+						return;
+					}
+				}
+
 				if(this.formMode === 'edit'){
 					payload = {
 						...this.userForm,

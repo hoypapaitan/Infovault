@@ -96,7 +96,7 @@
                         </a-avatar>
                         <div style="display: inline-block; vertical-align: middle;">
                             <h6 class="m-0 text-dark font-semibold">{{ text }}</h6>
-                            <p class="m-0 text-muted" style="font-size: 12px;">ID: {{ record.studentId }}</p>
+                            <p class="m-0 text-muted" style="font-size: 12px;">SID: {{ record.studentId }}</p>
                         </div>
                     </div>
                 </template>
@@ -148,7 +148,7 @@
         </a-card>
 
         <!-- Import Modal -->
-        <a-modal v-model="addUserModal" title="Upload CSV Data" centered @ok="uploadCSVData(csvData)">
+        <a-modal v-model="addUserModal" title="Upload CSV Data" centered @ok="uploadCSVData(csvData)" :width="900" bodyStyle="max-height:80vh;overflow-y:auto;">
             <a-alert message="Notes" description="Duplicate entries (Same Name, Year, Course OR Student ID) will be automatically skipped." type="info" show-icon class="mb-24" />
             <a-upload-dragger name="file" accept=".csv" :before-upload="getFile" :showUploadList="false">
                 <p class="ant-upload-drag-icon"><a-icon type="inbox" /></p>
@@ -159,6 +159,18 @@
                     <a-icon type="download" /> Download CSV Template
                 </a>
             </div>
+            <div v-if="csvData.length > 0" style="margin-top: 24px;">
+                <h5 class="font-semibold mb-2">Preview Imported Data</h5>
+                <div style="max-height:400px;overflow-y:auto;">
+                    <a-table
+                        :dataSource="csvData"
+                        :columns="columns.filter(col => col.dataIndex)"
+                        :pagination="{ pageSize: 5 }"
+                        rowKey="studentId"
+                        size="small"
+                    />
+                </div>
+            </div>
         </a-modal>
 
         <!-- Add Single Entry Modal -->
@@ -167,10 +179,28 @@
                 <a-form-item label="Student ID" required><a-input v-model="singleRecord.studentId" /></a-form-item>
                 <a-form-item label="Name" required><a-input v-model="singleRecord.name" /></a-form-item>
                 <a-form-item label="Address"><a-input v-model="singleRecord.address" /></a-form-item>
-                <a-form-item label="Batch"><a-input placeholder="ex: 2023-2024" v-model="singleRecord.batch"/></a-form-item>
-                <a-form-item label="Year Graduated"><a-input v-model="singleRecord.yearGraduated" /></a-form-item>
-                <a-form-item label="Course"><a-input v-model="singleRecord.course" /></a-form-item>
-                <a-form-item label="Major"><a-input v-model="singleRecord.major" /></a-form-item>
+                <a-form-item label="Class of"><a-input v-model="singleRecord.yearGraduated" /></a-form-item>
+                <a-form-item label="Program Covered">
+                    <a-select v-model="singleRecord.program" placeholder="Select Program Covered" allowClear>
+                        <a-select-option v-for="item in programsOpt" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Course">
+                    <a-select v-model="singleRecord.course" placeholder="Select Course" allowClear>
+                        <a-select-option v-for="item in coursesOpt[singleRecord.program]" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Major In">
+                    <a-select v-model="singleRecord.major" placeholder="Select Major" allowClear>
+                        <a-select-option v-for="item in majorOptions[singleRecord.course]" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
                 <a-form-item label="Achievement">
                     <a-select v-model="singleRecord.achievement" placeholder="Select Achievement" allowClear>
                         <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
@@ -178,7 +208,7 @@
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Gender" required>
+                <a-form-item label="Sex" required>
                     <a-select v-model="singleRecord.gender">
                         <a-select-option value="Male">Male</a-select-option>
                         <a-select-option value="Female">Female</a-select-option>
@@ -214,10 +244,28 @@
                 <a-form-item label="Student ID"><a-input v-model="editRecord.studentId" /></a-form-item>
                 <a-form-item label="Name"><a-input v-model="editRecord.name" /></a-form-item>
                 <a-form-item label="Address"><a-input v-model="editRecord.address" /></a-form-item>
-                <a-form-item label="Batch"><a-input placeholder="ex: 2023-2024" v-model="editRecord.batch" /></a-form-item>
-                <a-form-item label="Year Graduated"><a-input v-model="editRecord.yearGraduated" /></a-form-item>
-                <a-form-item label="Course"><a-input v-model="editRecord.course" /></a-form-item>
-                <a-form-item label="Major"><a-input v-model="editRecord.major" /></a-form-item>
+                <a-form-item label="Class of"><a-input v-model="editRecord.yearGraduated" /></a-form-item>
+                <a-form-item label="Program Covered">
+                    <a-select v-model="editRecord.program" placeholder="Select Program Covered" allowClear>
+                        <a-select-option v-for="item in programsOpt" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Course">
+                    <a-select v-model="editRecord.course" placeholder="Select Course" allowClear>
+                        <a-select-option v-for="item in coursesOpt[editRecord.program]" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Major In">
+                    <a-select v-model="editRecord.major" placeholder="Select Major" allowClear>
+                        <a-select-option v-for="item in majorOptions[editRecord.course]" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
                 <a-form-item label="Achievement">
                     <a-select v-model="editRecord.achievement" placeholder="Select Achievement" allowClear>
                         <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
@@ -225,7 +273,14 @@
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Gender">
+                <a-form-item label="Achievement">
+                    <a-select v-model="editRecord.achievement" placeholder="Select Achievement" allowClear>
+                        <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
+                            {{ item }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Sex">
                     <a-select v-model="editRecord.gender">
                         <a-select-option value="Male">Male</a-select-option>
                         <a-select-option value="Female">Female</a-select-option>
@@ -347,8 +402,106 @@ export default {
                 "With Highest Honor",
                 "Cum Laude",
                 "Magna Cum Laude",
-                "Summa Cum Laude"
-            ]
+                "Summa Cum Laude",
+                "None"
+            ],
+            programsOpt: [
+                'GRADUATES',
+                'UNDERGRADUATE',
+                'DIPLOMA or CERTIFICATE',
+            ],
+            coursesOpt: {
+                GRADUATES: [
+                    'MASTER OF ARTS IN EDUCATION',
+                    'MASTER IN MANAGEMENT',
+                    'MASTER OF SCIENCE IN AGRICULTURE',
+                    'MASTER OF SCIENCE IN ENVIRONMENTAL MANAGEMENT'
+                ],
+                UNDERGRADUATE: [
+                    'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES',
+                    'SCHOOL OF EDUCATION',
+                    'SCHOOL OF ARTS AND SCIENCES',
+                    'SCHOOL OF ENGINEERING',
+                    'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES',
+                    'SCHOOL OF INDUSTRIAL TECHNOLOGY',
+                    'SCHOOL OF INFORMATION TECHNOLOGY',
+                ],
+                "DIPLOMA or CERTIFICATE": [
+                    'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES',
+                    'SCHOOL OF INDUSTRIAL TECHNOLOGY',
+                    'SCHOOL OF INFORMATION TECHNOLOGY'
+                ],
+            },
+            majorOptions: {
+                'MASTER OF ARTS IN EDUCATION': [
+                    'major in Science Education',
+                    'major in Filipino Language Teaching',
+                    'major in Guidance Counseling',
+                    'major in Educational Management'
+                ],
+                'MASTER IN MANAGEMENT': [
+                    'major in Public Management',
+                    'major in Business Management'
+                ],
+                'MASTER OF SCIENCE IN AGRICULTURE': [
+                    'major in Animal Science',
+                    'major in Crop Science'
+                ],
+                'MASTER OF SCIENCE IN ENVIRONMENTAL MANAGEMENT': [],
+                'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES': [
+                    'major in Animal Science',
+                    'major in Crop Science',
+                    'major in Fisheries'
+                ],
+                'SCHOOL OF ARTS AND SCIENCES': [
+                    'in Hospitality Management',
+                    'in Tourism Management',
+                    'in Political Science'
+                ],
+                'SCHOOL OF EDUCATION': [
+                    'Bachelor of Elementary Education',
+                    'Bachelor of Secondary Education major in English',
+                    'Bachelor of Secondary Education major in Filipino',
+                    'Bachelor of Secondary Education major in Science',
+                    'Bachelor of Secondary Education major in Social Studies',
+                    'Bachelor of Secondary Education major in Mathematics',
+                    'Bachelor of Physical Education',
+                    'Bachelor of Technology and Livelihood Education major in Home Economics',
+                    'Bachelor of Technology and Livelihood Education major in Information and Communication Technology'
+                ],
+                'SCHOOL OF ENGINEERING': [
+                    'Bachelor of Science in Civil Engineering major in Construction Engineering and Management',
+                    'Bachelor of Science in Electrical Engineering',
+                    'Bachelor of Science in Mechanical Engineering'
+                ],
+                'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES': [
+                    'Bachelor of Science in Forestry',
+                    'Diploma in Forest Technology'
+                ],
+                'SCHOOL OF INDUSTRIAL TECHNOLOGY': [
+                    'Bachelor in Industrial Technology major in Automotive Engineering Technology',
+                    'Diploma in Automotive Engineering Technician Course',
+                    'Associate in Automotive Engineering Technician Course',
+                    'Certificate in Automotive Engineering Technician Course',
+                    'Bachelor in Industrial Technology major in Electrical Engineering Technology',
+                    'Diploma in Electrical Engineering Technician Course',
+                    'Associate in Electrical Engineering Technician Course',
+                    'Certificate in Electrical Engineering Technician Course',
+                    'Bachelor in Industrial Technology major in Civil Engineering Technology',
+                    'Diploma in Civil Engineering Technician Course',
+                    'Associate in Senior Civil Engineering Technician Course',
+                    'Certificate in Junior Civil Engineering Technician Course',
+                    'Bachelor in Industrial Technology major in Food Technology',
+                    'Diploma in Food Technology',
+                    'Certificate in Food Technology'
+                ],
+                'SCHOOL OF INFORMATION TECHNOLOGY': [
+                    'Bachelor of Science in Information Technology with Specialization in Application Programming',
+                    'Bachelor of Science in Information Technology with Specialization in Digital Design',
+                    'Associate in Computer Technology'
+                ],
+
+            }
         }
     },
     // FIX: Auto-reset pagination to page 1 when filtering
@@ -434,15 +587,16 @@ export default {
                 studentId: rec.studentId || rec.student_id || rec['Student ID'] || '',
                 name: rec.name || '',
                 address: rec.address || '',
-                batch: rec.batch || '',
                 yearGraduated: rec.yearGraduated || rec.year_graduated || rec['Year Graduated'] || '',
-                advisoryId: rec.advisoryId || rec.advisory_id || rec.advisory || null,
                 course: rec.course || '',
                 major: rec.major || '',
+                program: rec.program || '',
                 achievement: rec.achievement || '',
                 gender: rec.gender || '',
                 createdBy: creatorId
             }))
+
+            console.log(this.csvData)
             return false 
         },
         async uploadCSVData(data) {
@@ -532,6 +686,7 @@ export default {
             this.viewModal = true
         },
         handleEdit(rec) {
+            console.log('Editing record:', rec);
             this.editRecord = Object.assign({}, rec)
             this.editModal = true
         },

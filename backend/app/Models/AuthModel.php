@@ -27,7 +27,8 @@ class AuthModel extends Model
         'email', 
         'contact',
         'status',
-        'status' 
+        'status',
+        'loginAttemps'
     ];
 
     protected $useTimestamps = false;

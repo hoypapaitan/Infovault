@@ -1,2 +1,2 @@
-name,address,batch,yearGraduated,advisoryId,section,course,major,achievement,gender
-"Sample Graduate Name","123 Sample Street, Sample City","2023-2024","2024",1,"","MASTER OF ARTS IN EDUCATION (MAEd)","Major in Educational Management","Cum Laude","Female"
+studentId,name,address,gender,yearGraduated,program,course,major,achievement
+1234566789,Sample Graduate Name,"123 Sample Street, Sample City",Female,2024,,,,

@@ -23,21 +23,24 @@ class Graduates extends BaseController
             return $this->response->setStatusCode(400)->setJSON($response);
         }
 
-        // Map incoming data
+        // Map incoming data and enforce required fields
         $row = [
-            'studentId'     => $data['studentId'], // Added Student ID
+            'studentId'     => $data['studentId'],
             'name'          => $data['name'] ?? null,
             'address'       => $data['address'] ?? null,
-            'batch'         => $data['batch'] ?? null,
             'yearGraduated' => $data['yearGraduated'] ?? ($data['year_graduated'] ?? null),
-            'advisoryId'    => $data['advisoryId'] ?? ($data['advisory_id'] ?? null),
-            'section'       => $data['section'] ?? null,
-            'course'        => $data['course'] ?? null,
-            'major'         => $data['major'] ?? null,
+            'course'        => $data['course'] ?? '',
+            'major'         => $data['major'] ?? '',
+            'program'       => $data['program'] ?? '',
             'achievement'   => $data['achievement'] ?? null,
             'gender'        => $data['gender'] ?? null,
             'created_by'    => $data['created_by'] ?? ($data['createdBy'] ?? 0),
         ];
+        // Validate required fields for dashboard navigation
+        if(empty($row['program']) || empty($row['course']) || empty($row['major']) || empty($row['yearGraduated'])){
+            $response = ['error' => true, 'title'=>'Missing Data','message'=>'Program, Course, Major, and Year Graduated are required.'];
+            return $this->response->setStatusCode(400)->setJSON($response);
+        }
 
         // Check for duplicates (Name+Year+Course OR StudentID)
         if($this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'], $row['studentId'])){
@@ -68,23 +71,25 @@ class Graduates extends BaseController
 
         foreach ($data->csv as $value){
             $payload = json_decode(json_encode($value), true);
-            
             $row = [
-                'studentId'     => $payload['studentId'] ?? ($payload['student_id'] ?? null), // Added mapping
+                'studentId'     => $payload['studentId'] ?? ($payload['student_id'] ?? null),
                 'name'          => $payload['name'] ?? ($payload['fullName'] ?? null),
                 'address'       => $payload['address'] ?? null,
                 'batch'         => $payload['batch'] ?? null,
                 'yearGraduated' => $payload['yearGraduated'] ?? ($payload['year_graduated'] ?? null),
                 'advisoryId'    => $payload['advisoryId'] ?? ($payload['advisory_id'] ?? null),
                 'section'       => $payload['section'] ?? null,
-                'course'        => $payload['course'] ?? null,
-                'major'         => $payload['major'] ?? null,
+                'course'        => $payload['course'] ?? '',
+                'major'         => $payload['major'] ?? '',
+                'program'       => $payload['program'] ?? '',
                 'achievement'   => $payload['achievement'] ?? null,
                 'gender'        => $payload['gender'] ?? null,
                 'created_by'    => $payload['created_by'] ?? ($payload['createdBy'] ?? 0),
             ];
-
-            // Only insert if no duplicate exists based on composite key OR student ID
+            // Validate required fields for dashboard navigation
+            if(empty($row['program']) || empty($row['course']) || empty($row['major']) || empty($row['yearGraduated'])){
+                continue; // skip incomplete records
+            }
             if (!$this->checkForDuplicate($row['name'], $row['yearGraduated'], $row['course'], $row['studentId'])) {
                 $this->graduatesModel->insert($row);
             }
@@ -107,12 +112,19 @@ class Graduates extends BaseController
         
         // Whitelist fields to allow update - ADDED studentId
         $updateData = [];
-        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'section', 'major', 'batch'];
+        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'major', 'program'];
         
         foreach($allowed as $field) {
             if(isset($data[$field])) {
                 $updateData[$field] = $data[$field];
             }
+        }
+        // Validate required fields for dashboard navigation
+        if(isset($updateData['program']) && empty($updateData['program']) ||
+           isset($updateData['course']) && empty($updateData['course']) ||
+           isset($updateData['major']) && empty($updateData['major']) ||
+           isset($updateData['yearGraduated']) && empty($updateData['yearGraduated'])){
+            return $this->response->setStatusCode(400)->setJSON(['error'=>true,'message'=>'Program, Course, Major, and Year Graduated are required.']);
         }
         
         if(empty($updateData)){
@@ -155,6 +167,13 @@ class Graduates extends BaseController
      */
     public function getList(){
         $list = $this->graduatesModel->orderBy('yearGraduated', 'DESC')->findAll();
+        // Ensure all records have program, course, major, yearGraduated fields (for frontend navigation)
+        foreach ($list as &$rec) {
+            $rec['program'] = $rec['program'] ?? '';
+            $rec['course'] = $rec['course'] ?? '';
+            $rec['major'] = $rec['major'] ?? '';
+            $rec['yearGraduated'] = $rec['yearGraduated'] ?? '';
+        }
         return $this->response->setStatusCode(200)->setJSON(['error' => false, 'list' => $list]);
     }
 

@@ -1,129 +1,227 @@
 <?php namespace App\Controllers;
 
-use CodeIgniter\HTTP\IncomingRequest;
 use App\Models\AuthModel;
-use CodeIgniter\RESTful\ResourceController;
+use CodeIgniter\Controller;
+use CodeIgniter\Database\ConnectionInterface;
+use CodeIgniter\Files\File;
 
 class BackupController extends BaseController
 {
-    public function __construct(){
-        //Models
+    protected AuthModel $authModel;
+    protected ConnectionInterface $db;
+    
+    public function __construct()
+    {
         $this->authModel = new AuthModel();
+        $this->db = \Config\Database::connect();
     }
 
-    public function backupDatabase(){
-        //Get API Request Data from NuxtJs
-        $data = $this->request->getJSON(); 
-        $hasPass = sha1($data->password);
-
-        //Select Query for finding User Information
-        $user = $this->authModel->where(['id' => $data->userId, 'password' => $hasPass])->get()->getRow();
-        
-        //Set Api Response return to the FE
-        if($user){
-            $db = db_connect();
-            $dbutil = \Config\Database::utils();
-            $tables = $db->listTables();
-
-            $prefs = array(
-                'tables'        => $tables,   // Array of tables to backup.
-                'ignore'        => array(),                     // List of tables to omit from the backup
-                'format'        => 'txt',                       // gzip, zip, txt
-                'filename'      => 'genan_db.sql',              // File name - NEEDED ONLY WITH ZIP FILES
-                'add_drop'      => TRUE,                        // Whether to add DROP TABLE statements to backup file
-                'add_insert'    => TRUE,                        // Whether to add INSERT data to backup file
-                'newline'       => "\n"                         // Newline character used in backup file
-            );
-
-            $backup = $dbutil->backup($prefs);
-
-            ob_start();
-
-            return $this->response
-                ->setStatusCode(200)
-                ->setContentType('text/plain')
-                ->setBody(json_encode($backup));
-        } else {
-            $response = [
-                'error' => 401,
-                'title' => 'Backup Denied',
-                'message' => 'Unauthoried user is trying to backup'
-            ];
-
-            return $this->response
-                    ->setStatusCode(401)
-                    ->setContentType('application/json')
-                    ->setBody(json_encode($response));
+    public function backupDatabase()
+    {
+        $data = $this->request->getJSON();
+        if (!$data || !property_exists($data, 'password') || !property_exists($data, 'userId')) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'error' => 'Invalid or missing request data'
+            ]);
         }
+
+        $hasPass = sha1($data->password);
+        $user = $this->authModel->where([
+            'id' => $data->userId,
+            'password' => $hasPass
+        ])->first();
+
+        if (!$user) {
+            return $this->response->setStatusCode(401)->setJSON([
+                'error' => 'Unauthorized',
+                'title' => 'Backup Denied',
+                'message' => 'Unauthorized user is trying to backup'
+            ]);
+        }
+
+        // Create backup filename with timestamp
+        $timestamp = date('Y-m-d_H-i-s');
+        $filename = "infovault_backup_{$timestamp}.sql";
+        $backupPath = WRITEPATH . 'backups/';
+
+        // Ensure backup directory exists
+        if (!is_dir($backupPath)) {
+            mkdir($backupPath, 0777, true);
+        }
+
+        // Get all tables
+        $tables = [];
+        $result = $this->db->query("SHOW TABLES")->getResult();
+        foreach ($result as $row) {
+            $tables[] = reset($row); // Get the first value from the row
+        }
+        
+        $output = "-- Database Backup - Generated on " . date('Y-m-d H:i:s') . "\n\n";
+
+        // Disable foreign key checks at start
+        $output .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+        foreach ($tables as $table) {
+            // Get create table syntax
+            $query = $this->db->query("SHOW CREATE TABLE `{$table}`");
+            $row = $query->getRow();
+            $createTableSql = $row->{'Create Table'} ?? '';
+            
+            if ($createTableSql) {
+                $output .= "DROP TABLE IF EXISTS `{$table}`;\n";
+                $output .= $createTableSql . ";\n\n";
+
+                // Get table data
+                $query = $this->db->query("SELECT * FROM `{$table}`");
+                $rows = $query->getResultArray();
+
+                if (!empty($rows)) {
+                    foreach ($rows as $row) {
+                        $keys = array_keys($row);
+                        $values = array_map(function($value) {
+                            if ($value === null) return 'NULL';
+                            return $this->db->escape($value);
+                        }, $row);
+
+                        $output .= "INSERT INTO `{$table}` (`" . implode('`, `', $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
+                    }
+                    $output .= "\n";
+                }
+            }
+        }
+
+        // Re-enable foreign key checks at end
+        $output .= "\nSET FOREIGN_KEY_CHECKS=1;\n";
+
+        // Save the SQL file
+        $fullPath = $backupPath . $filename;
+        if (file_put_contents($fullPath, $output) === false) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => 'Failed to create backup file'
+            ]);
+        }
+
+        // Return the file as download
+        return $this->response->download($fullPath, null)->setFileName($filename);
     }
     
     public function restoreDatabase()
     {
-        // Check if a file is uploaded
+        // Verify file upload
         $file = $this->request->getFile('backup_file');
-        if (!$file->isValid()) {
-            return $this->response
-                ->setStatusCode(400)
-                ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'No valid file uploaded']));
+        if (!$file || !$file->isValid()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'error' => 'No valid file uploaded'
+            ]);
         }
 
-        // Generate a new name for the file and move it to the writable/uploads directory
+        // Verify file type
+        $ext = $file->getExtension();
+        if ($ext !== 'sql') {
+            return $this->response->setStatusCode(400)->setJSON([
+                'error' => 'Invalid file type. Only .sql files are allowed'
+            ]);
+        }
+
+        // Move file to temporary location
         $newName = $file->getRandomName();
         $filePath = WRITEPATH . 'uploads/' . $newName;
         if (!$file->move(WRITEPATH . 'uploads', $newName)) {
-            return $this->response
-                ->setStatusCode(500)
-                ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'Failed to move uploaded file']));
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => 'Failed to move uploaded file'
+            ]);
         }
 
-        // Read the file content
-        if (!file_exists($filePath)) {
-            return $this->response
-                ->setStatusCode(500)
-                ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'File does not exist after moving']));
+        try {
+            // Read and process SQL file
+            $sql = file_get_contents($filePath);
+            if ($sql === false) {
+                throw new \RuntimeException('Failed to read SQL file');
+            }
+
+            // Disable foreign key checks before restore
+            $this->db->query('SET FOREIGN_KEY_CHECKS=0');
+
+            // Split and execute SQL statements
+            $statements = array_filter(
+                explode(";\n", str_replace("\r", '', $sql)),
+                function($statement) {
+                    return trim($statement) !== '';
+                }
+            );
+
+            foreach ($statements as $statement) {
+                if (trim($statement) !== '') {
+                    $this->db->query($statement);
+                }
+            }
+
+            // Re-enable foreign key checks
+            $this->db->query('SET FOREIGN_KEY_CHECKS=1');
+
+            // Cleanup
+            unlink($filePath);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Database restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            // Cleanup on error
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Re-enable foreign key checks in case of error
+            try {
+                $this->db->query('SET FOREIGN_KEY_CHECKS=1');
+            } catch (\Exception $ex) {
+                // Ignore any errors here
+            }
+
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => 'Failed to restore database: ' . $e->getMessage()
+            ]);
         }
 
-        $sql = file_get_contents($filePath);
-        if ($sql === false) {
-            return $this->response
-                ->setStatusCode(500)
-                ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'Failed to read file content']));
-        }
-
-        $sql = str_replace("\n", " ", $sql);
-        
-        // Log the SQL content for debugging
-        log_message('debug', 'SQL Content: ' . $sql);
-
-        // Execute the SQL commands to restore the database
+        /** @var \CodeIgniter\Database\BaseConnection $db */
         $db = \Config\Database::connect();
         $db->transStart();
+        
+        $error = false;
         try {
-            $db->query($sql);
+            foreach ($sqls as $statement) {
+                // Clean up the statement and skip if empty or a comment
+                $statement = trim($statement);
+                if (!empty($statement) && !str_starts_with($statement, '--')) {
+                    $db->query($statement);
+                }
+            }
         } catch (\Exception $e) {
+            $db->transRollback();
             log_message('error', 'SQL Execution Error: ' . $e->getMessage());
-            return $this->response
-                ->setStatusCode(500)
-                ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'Failed to execute SQL commands', 'details' => $e->getMessage()]));
+            $error = $e->getMessage();
         }
         $db->transComplete();
 
-        if ($db->transStatus() === false) {
+        // Check for any transaction failure
+        if ($db->transStatus() === false || $error) {
+            @unlink($filePath); // Cleanup
             return $this->response
                 ->setStatusCode(500)
                 ->setContentType('application/json')
-                ->setBody(json_encode(['error' => 'Failed to restore database']));
+                ->setBody(json_encode([
+                    'error' => 'Failed to restore database', 
+                    'details' => $error ? $error : 'Transaction failed.'
+                ]));
         }
 
+        // Final cleanup and success response
+        @unlink($filePath);
         return $this->response
             ->setStatusCode(200)
             ->setContentType('application/json')
             ->setBody(json_encode(['message' => 'Database restored successfully']));
     }
-
 }

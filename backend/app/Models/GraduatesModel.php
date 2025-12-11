@@ -20,7 +20,7 @@ class GraduatesModel extends Model
         'studentId',
         'name',
         'address',
-        'batch',
+        'program',
         'yearGraduated',
         'advisoryId',
         'section',

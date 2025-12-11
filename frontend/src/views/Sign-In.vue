@@ -156,7 +156,13 @@ export default {
 						console.log('Response status:', res.status);
 						this.loginLoading = false;
 						let response = {...res.data}
-						
+
+						// Show locked message if error 403
+						if (res.status === 403 || response.error === 403) {
+							this.$message.error(response.message || 'Your account is locked due to too many failed login attempts. Please contact an admin to unlock.');
+							return;
+						}
+
 						if(!response.error){
 							localStorage.setItem("userToken", response.jwt)
 							this.$message.success('Login successful!');
@@ -172,7 +178,9 @@ export default {
 						this.loginLoading = false;
 						
 						if (error.response) {
-							this.$message.error(`Server error: ${error.response.status}`);
+							console.error('Error response data:', error.response.data);
+							this.$message.error(error.response.data.message || 'Your account is locked due to too many failed login attempts. Please contact an admin to unlock.');
+							return;
 						} else if (error.request) {
 							this.$message.error('No response from server. Check if backend is running on http://localhost:8080');
 						} else {

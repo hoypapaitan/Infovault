@@ -30,7 +30,12 @@ CREATE TABLE IF NOT EXISTS `tblgraduates` (
   `advisoryId` int DEFAULT NULL,
   `section` text,
   `course` text,
+  `program` text,
   `major` text,
+  `status` text,
+  `category` text,
+  `achievement` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `gender` varchar(50) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
@@ -72,6 +77,7 @@ CREATE TABLE IF NOT EXISTS `tblusers` (
   `userType` int NOT NULL,
   `status` int NOT NULL DEFAULT '1',
   `isDeleted` int NOT NULL DEFAULT '0',
+  `loginAttemps` int NOT NULL DEFAULT '0',
   `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -79,9 +85,9 @@ CREATE TABLE IF NOT EXISTS `tblusers` (
 
 -- Dumping data for table infovault_db.tblusers: ~0 rows (approximately)
 DELETE FROM `tblusers`;
-INSERT INTO `tblusers` (`id`, `username`, `password`, `firstName`, `lastName`, `middleName`, `suffix`, `sex`, `email`, `contact`, `address`, `userType`, `status`, `isDeleted`, `createdAt`, `updatedAt`) VALUES
-	(1, 'admin', 'cbfdac6008f9cab4083784cbd1874f76618d2a97', 'Firsts', 'Users', 'Admin', ' ', 'Male', 'jommelcabiles.dev@gmail.com', '09876543212', 'test address', 1, 1, 0, '2024-10-12 14:35:21', '2024-10-12 14:35:21'),
-	(4, 'coor', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'dasd', 'sadasd', 'fff', '', 'Male', '', '098634423', '', 2, 1, 0, '2025-12-02 16:33:43', '2025-12-02 16:33:43');
+INSERT INTO `tblusers` (`id`, `username`, `password`, `firstName`, `lastName`, `middleName`, `suffix`, `sex`, `email`, `contact`, `address`, `userType`, `status`, `isDeleted`, `loginAttemps`, `createdAt`, `updatedAt`) VALUES
+	(1, 'admin', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'Firsts', 'Users', 'Admin', ' ', 'Male', 'jommelcabiles.dev@gmail.com', '09876543212', 'test address', 1, 1, 0, 0, '2024-10-12 14:35:21', '2024-10-12 14:35:21'),
+	(4, 'coor', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'dasd', 'sadasd', 'fff', '', 'Male', '', '098634423', '', 2, 1, 0, 5, '2025-12-02 16:33:43', '2025-12-02 16:33:43');
 
 -- Dumping structure for table infovault_db.tblusertypes
 CREATE TABLE IF NOT EXISTS `tblusertypes` (
