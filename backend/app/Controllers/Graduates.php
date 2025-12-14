@@ -33,6 +33,7 @@ class Graduates extends BaseController
             'major'         => $data['major'] ?? '',
             'program'       => $data['program'] ?? '',
             'achievement'   => $data['achievement'] ?? null,
+            'additionalAchievement'   => isset($data['additionalAchievement']) ? json_encode($data['additionalAchievement']) : null,
             'gender'        => $data['gender'] ?? null,
             'created_by'    => $data['created_by'] ?? ($data['createdBy'] ?? 0),
         ];
@@ -83,6 +84,7 @@ class Graduates extends BaseController
                 'major'         => $payload['major'] ?? '',
                 'program'       => $payload['program'] ?? '',
                 'achievement'   => $payload['achievement'] ?? null,
+                'additionalAchievement'   => isset($payload['additionalAchievement']) ? json_encode($payload['additionalAchievement']) : null,
                 'gender'        => $payload['gender'] ?? null,
                 'created_by'    => $payload['created_by'] ?? ($payload['createdBy'] ?? 0),
             ];
@@ -112,11 +114,15 @@ class Graduates extends BaseController
         
         // Whitelist fields to allow update - ADDED studentId
         $updateData = [];
-        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'major', 'program'];
+        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'major', 'program', 'additionalAchievement'];
         
         foreach($allowed as $field) {
             if(isset($data[$field])) {
-                $updateData[$field] = $data[$field];
+                if($field === 'additionalAchievement') {
+                    $updateData[$field] = json_encode($data[$field]);
+                } else {
+                    $updateData[$field] = $data[$field];
+                }
             }
         }
         // Validate required fields for dashboard navigation
@@ -173,6 +179,11 @@ class Graduates extends BaseController
             $rec['course'] = $rec['course'] ?? '';
             $rec['major'] = $rec['major'] ?? '';
             $rec['yearGraduated'] = $rec['yearGraduated'] ?? '';
+            // Decode additionalAchievement JSON string to array
+            if (isset($rec['additionalAchievement']) && !is_array($rec['additionalAchievement'])) {
+                $decoded = json_decode($rec['additionalAchievement'], true);
+                $rec['additionalAchievement'] = is_array($decoded) ? $decoded : [];
+            }
         }
         return $this->response->setStatusCode(200)->setJSON(['error' => false, 'list' => $list]);
     }

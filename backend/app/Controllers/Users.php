@@ -7,7 +7,11 @@ use App\Models\MiscModel;
 use \Firebase\JWT\JWT;
 
 class Users extends BaseController
-{
+{  
+    protected $userModel;
+    protected $authModel;
+    protected $miscModel;
+    
     public function __construct(){
         //Models
         $this->userModel = new UsersModel();

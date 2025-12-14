@@ -32,8 +32,11 @@
         </a-card>
         <!-- Program/Course/Major/Year Navigation with Breadcrumbs and Back Button in Card Header -->
         <a-card class="mb-24" :bordered="false" :bodyStyle="{padding: '18px 24px 10px 24px'}">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <a-breadcrumb>
+            <div style="display: flex; align-items: center;  margin-bottom: 10px;">
+                <a-button v-if="selectedProgram || selectedCourse || selectedMajor || selectedYear" type="dashed" icon="arrow-left" @click="goBackNav">
+                    Back
+                </a-button>
+                <a-breadcrumb style="margin-left: 20px;">
                     <a-breadcrumb-item v-if="selectedProgram" @click.native="goBackTo('program')" style="cursor:pointer;">
                         {{ selectedProgram }}
                     </a-breadcrumb-item>
@@ -47,9 +50,7 @@
                         {{ selectedYear }}
                     </a-breadcrumb-item>
                 </a-breadcrumb>
-                <a-button v-if="selectedProgram || selectedCourse || selectedMajor || selectedYear" type="dashed" icon="arrow-left" @click="goBackNav">
-                    Back
-                </a-button>
+                
             </div>
             <a-row :gutter="[16, 16]" style="margin-top: 10px;">
                 <!-- Step 1: Program Cards -->
@@ -70,29 +71,11 @@
                         </div>
                     </a-col>
                 </template>
-                <!-- Step 3: Major Cards -->
-                <template v-else-if="selectedCourse && !selectedMajor">
-                    <a-col v-for="major in majorList[selectedCourse]" :key="major" :xs="12" :sm="8" :md="6" :lg="4">
-                        <div class="folder-card small-folder" @click="selectMajor(major)">
-                            <a-icon type="folder" style="font-size:24px;color:#faad14;" />
-                            <div class="folder-label">{{ major }}</div>
-                        </div>
-                    </a-col>
-                </template>
-                <!-- Step 4: Year Cards -->
-                <template v-else-if="selectedMajor && !selectedYear">
-                    <a-col v-for="year in availableYears" :key="year" :xs="12" :sm="8" :md="6" :lg="4">
-                        <div class="folder-card small-folder" @click="selectYear(year)">
-                            <a-icon type="folder" style="font-size:20px;color:#13c2c2;" />
-                            <div class="folder-label">{{ year }}</div>
-                        </div>
-                    </a-col>
-                </template>
             </a-row>
         </a-card>
     
         <!-- Filters -->
-        <a-card :bordered="false" class="mb-24" v-if="selectedYear">
+        <a-card :bordered="false" class="mb-24 mt-24" v-if="selectedCourse">
             <a-row :gutter="16" align="middle">
                 <a-col :span="12" :md="8">
                     <a-input
@@ -115,7 +98,7 @@
 
         <!-- Table -->
         <transition name="fade" mode="out-in">
-            <a-card :bordered="false" class="header-solid table-card" v-if="selectedYear" key="table">
+            <a-card :bordered="false" class="header-solid table-card mb-24 mt-24 " v-if="selectedCourse" key="table">
                 <div slot="title" style="display: flex; align-items: center;">
                     <a-avatar shape="square" style="background-color: #f6ffed; color: #52c41a" icon="table" class="mr-2" />
                     <div>
@@ -193,7 +176,7 @@
                 </a-table>
             </a-card>
 
-            <div v-if="!loading && selectedYear && filteredGraduates.length === 0" class="empty-state-container" key="empty">
+            <div v-if="!loading && selectedCourse && filteredGraduates.length === 0" class="empty-state-container" key="empty">
                 <a-empty 
                     image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                     :image-style="{ height: '150px' }"
@@ -206,8 +189,8 @@
         </transition>
 
         <!-- Analytics Summary Section (below folder navigation) -->
-        <a-row :gutter="[24, 24]" class="mb-24">
-            <a-col :xs="24" :sm="12" :md="6" v-for="stat in summaryStats" :key="stat.key">
+        <a-row :gutter="[24, 24]" class="mb-24 mt-24">
+            <a-col :xs="24" :sm="12" :md="8" v-for="stat in summaryStats" :key="stat.key">
                 <a-card class="stat-card" :bordered="false">
                     <a-statistic
                         :title="stat.title"
@@ -285,7 +268,12 @@
             <a-col :xs="24" :lg="10">
                 <a-card class="achievement-card" :bordered="false" :loading="loading">
                     <template #title>
-                        <span class="card-title"><a-icon type="trophy" /> Achievements Distribution</span>
+                        <span class="card-title"><a-icon type="trophy" /> Achievements Distribution Per Year</span>
+                    </template>
+                    <template #extra>
+                        <a-select v-model="selectedAchievementYear" @change="updateAchievementsChart" size="small" style="width: 120px;">
+                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
+                        </a-select>
                     </template>
                     <div class="achievements-list">
                         <div v-for="achievement in achievementsData" :key="achievement.type" class="achievement-item">
@@ -308,7 +296,12 @@
 
                 <a-card class="chart-card mt-10" :bordered="false" :loading="loading">
                     <template #title>
-                        <span class="card-title"><a-icon type="pie-chart" /> Gender Distribution</span>
+                        <span class="card-title"><a-icon type="pie-chart" /> Gender Distribution Per Year</span>
+                    </template>
+                    <template #extra>
+                        <a-select v-model="selectedGenderYear" @change="updateGenderChart" size="small" style="width: 120px;">
+                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
+                        </a-select>
                     </template>
                     <div class="chart-container">
                         <canvas id="genderChart" ref="genderChart"></canvas>
@@ -487,6 +480,7 @@ export default {
     },
     data() {
         return {
+                        selectedAchievementYear: null, // for year selection in achievements
             loading: false,
             allGraduates: [],
             filteredGraduates: [],
@@ -498,6 +492,7 @@ export default {
             exporting: false,
             graduatesChartType: 'line',
             genderChartType: 'doughnut',
+            selectedGenderYear: null, // for year selection in gender chart
             courseMetricsView: 'chart',
             departmentsView: 'overview',
             graduatesChartInstance: null,
@@ -517,8 +512,6 @@ export default {
             courseMetricsColumns: [
                 { title: 'Course', dataIndex: 'course', key: 'course', ellipsis: true },
                 { title: 'Total Graduates', dataIndex: 'totalGraduates', key: 'totalGraduates', align: 'center' },
-                { title: 'Completion Rate', dataIndex: 'completionRate', key: 'completionRate', align: 'center', scopedSlots: { customRender: 'completion_rate' } },
-                { title: 'Avg/Year', dataIndex: 'avgPerYear', key: 'avgPerYear', align: 'center' },
                 { title: 'Growth Rate', dataIndex: 'growthRate', key: 'growthRate', align: 'center' }
             ],
             // Navigation data
@@ -629,11 +622,69 @@ export default {
             editModalVisible: false,
             editingGraduate: null,
             graduateColumns: [
-                { title: 'STUDENT', dataIndex: 'name', key: 'name', scopedSlots: { customRender: 'name' }, sorter: (a, b) => a.name.localeCompare(b.name), width: 280 },
-                { title: 'GENDER', dataIndex: 'gender', key: 'gender', width: 120, scopedSlots: { customRender: 'gender' } },
-                { title: 'COURSE', dataIndex: 'course', key: 'course', ellipsis: true, scopedSlots: { customRender: 'course' } },
-                { title: 'ACHIEVEMENT', dataIndex: 'achievement', key: 'achievement', scopedSlots: { customRender: 'achievement' }, width: 200 },
-                { title: 'ACTION', key: 'action', scopedSlots: { customRender: 'action' }, width: 150, align: 'center', fixed: 'right' },
+                { 
+                    title: 'STUDENT NUMBER', 
+                    dataIndex: 'studentId', 
+                    key: 'studentId', 
+                    scopedSlots: { customRender: 'studentId' }, 
+                    sorter: (a, b) => a.studentId.localeCompare(b.studentId), 
+                    width: 180 
+                },
+                { 
+                    title: 'STUDENT', 
+                    dataIndex: 'name', 
+                    key: 'name', 
+                    scopedSlots: { customRender: 'name' }, 
+                    sorter: (a, b) => a.name.localeCompare(b.name), 
+                    width: 280 
+                },
+                { 
+                    title: 'ADDRESS', 
+                    dataIndex: 'address', 
+                    key: 'address', 
+                    scopedSlots: { customRender: 'address' }, 
+                    sorter: (a, b) => a.address.localeCompare(b.address), 
+                    width: 280 
+                },
+                { 
+                    title: 'SEX', 
+                    dataIndex: 'gender', 
+                    key: 'gender', 
+                    width: 120,
+                    sorter: (a, b) => a.gender.localeCompare(b.gender), 
+                    scopedSlots: { customRender: 'gender' } 
+                },
+                { 
+                    title: 'COURSE', 
+                    dataIndex: 'course', 
+                    key: 'course',
+                    sorter: (a, b) => a.course.localeCompare(b.course), 
+                    scopedSlots: { customRender: 'course' } 
+                },
+                { 
+                    title: 'CLASS OF', 
+                    dataIndex: 'yearGraduated', 
+                    key: 'yearGraduated',
+                    sorter: (a, b) => a.yearGraduated.localeCompare(b.yearGraduated), 
+                    scopedSlots: { customRender: 'yearGraduated' } ,
+                    width: 130 
+                },
+                { 
+                    title: 'ACHIEVEMENT', 
+                    dataIndex: 'achievement', 
+                    key: 'achievement', 
+                    sorter: (a, b) => a.achievement.localeCompare(b.achievement), 
+                    scopedSlots: { customRender: 'achievement' }, 
+                    width: 200 
+                },
+                { 
+                    title: 'ACTION', 
+                    key: 'action', 
+                    scopedSlots: { customRender: 'action' }, 
+                    width: 150, 
+                    align: 'center', 
+                    fixed: 'right' 
+                },
             ]
         }
     },
@@ -656,6 +707,31 @@ export default {
         isAdmin: function () {
             return this.user && this.user.aud === 'admin'
         },
+         achievementsData() {
+            // Use selectedAchievementYear or latest year
+            let year = this.selectedAchievementYear;
+            const years = Object.keys(this.analyticsData.yearlyGender || {});
+            if (!year && years.length > 0) {
+                year = years.sort((a,b)=>b-a)[0];
+                this.selectedAchievementYear = year;
+            }
+            // Filter allGraduates by year
+            const grads = this.allGraduates.filter(g => String(g.yearGraduated) === String(year));
+            const achievementCounts = {};
+            grads.forEach(g => {
+                const ach = g.achievement || 'None';
+                achievementCounts[ach] = (achievementCounts[ach] || 0) + 1;
+            });
+            const total = grads.length || 1;
+            const colors = ['#52c41a', '#1890ff', '#722ed1', '#faad14', '#eb2f96', '#1890ff'];
+            return Object.keys(achievementCounts).map((key, idx) => ({
+                type: key.toLowerCase().replace(/ /g, '_'),
+                title: key,
+                count: achievementCounts[key],
+                percentage: Math.round((achievementCounts[key] / total) * 100),
+                color: colors[idx % colors.length]
+            }));
+        },
         availableYears() {
             // Return all years for selected program, course, major
             if (!this.selectedProgram || !this.selectedCourse || !this.selectedMajor) return [];
@@ -672,7 +748,6 @@ export default {
                 course: course.course,
                 totalGraduates: course.total_graduates,
                 completionRate: course.completion_rate,
-                avgPerYear: course.avg_graduates_per_year,
                 growthRate: course.growth_rate || 0
             }));
         },
@@ -763,6 +838,7 @@ export default {
             this.selectedCourse = course;
             this.selectedMajor = null;
             this.selectedYear = null;
+            this.applyFilters();
         },
         selectMajor(major) {
             this.selectedMajor = major;
@@ -793,12 +869,7 @@ export default {
             if (this.selectedCourse) {
                 filtered = filtered.filter(g => g.course === this.selectedCourse);
             }
-            if (this.selectedMajor) {
-                filtered = filtered.filter(g => g.major === this.selectedMajor);
-            }
-            if (this.selectedYear) {
-                filtered = filtered.filter(g => g.yearGraduated === this.selectedYear);
-            }
+            // Skip filtering by major/year for immediate graduate list after course selection
             if (this.nameSearch) {
                 filtered = filtered.filter(g => g.name.toLowerCase().includes(this.nameSearch.toLowerCase()));
             }
@@ -970,16 +1041,6 @@ export default {
                     trend: 2.1
                 },
                 {
-                    key: 'completion',
-                    title: 'Avg Completion Rate',
-                    value: 98.5, // Mocked as we don't have enrollment data
-                    suffix: '%',
-                    precision: 1,
-                    icon: 'check-circle',
-                    color: '#722ed1',
-                    trend: 1.3
-                },
-                {
                     key: 'departments',
                     title: 'Programs',
                     value: new Set(Object.keys(courseStats).map(c => c.split(' ')[0])).size,
@@ -1020,7 +1081,6 @@ export default {
             this.summaryStats = [
                 { key: 'total', title: 'Total Graduates', value: 100, icon: 'user', color: '#1890ff', trend: 8.2 },
                 { key: 'courses', title: 'Active Courses', value: 5, icon: 'book', color: '#52c41a', trend: 2.1 },
-                { key: 'completion', title: 'Avg Completion Rate', value: 94.5, suffix: '%', precision: 1, icon: 'check-circle', color: '#722ed1', trend: 1.3 },
                 { key: 'departments', title: 'Departments', value: 3, icon: 'cluster', color: '#faad14', trend: 0 }
             ];
 
@@ -1131,7 +1191,14 @@ export default {
             }
 
             const ctx = canvas.getContext('2d');
-            const data = this.analyticsData.genderDistribution || { male: 0, female: 0 };
+            // Use selected year or latest year
+            let year = this.selectedGenderYear;
+            const years = Object.keys(this.analyticsData.yearlyGender || {});
+            if (!year && years.length > 0) {
+                year = years.sort((a,b)=>b-a)[0];
+                this.selectedGenderYear = year;
+            }
+            const data = (this.analyticsData.yearlyGender && this.analyticsData.yearlyGender[year]) || { male: 0, female: 0 };
 
             this.genderChartInstance = new Chart(ctx, {
                 type: this.genderChartType === 'bar' ? 'bar' : this.genderChartType,
@@ -1151,7 +1218,6 @@ export default {
                     plugins: { 
                         legend: { 
                             position: 'bottom',
-                            // Hide legend for bar chart as x-axis labels correspond to data
                             display: this.genderChartType !== 'bar' 
                         } 
                     }
@@ -1177,17 +1243,22 @@ export default {
             const labels = courses.map(c => c.course.length > 20 ? c.course.substring(0, 20) + '...' : c.course);
             const values = courses.map(c => c.total_graduates);
 
+            let chartType = this.courseMetricsChartType || 'line';
+            let datasetConfig = {
+                label: 'Total Graduates',
+                data: values,
+                backgroundColor: chartType === 'bar' ? '#52c41a' : 'rgba(82,196,26,0.2)',
+                borderColor: '#52c41a',
+                borderWidth: 2,
+                fill: chartType === 'line',
+                tension: 0.4
+            };
+
             this.courseChartInstance = new Chart(ctx, {
-                type: 'bar',
+                type: chartType,
                 data: {
                     labels,
-                    datasets: [{
-                        label: 'Total Graduates',
-                        data: values,
-                        backgroundColor: '#52c41a',
-                        borderColor: '#52c41a',
-                        borderWidth: 1
-                    }]
+                    datasets: [datasetConfig]
                 },
                 options: {
                     responsive: true,

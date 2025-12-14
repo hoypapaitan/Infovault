@@ -32,14 +32,14 @@
 						<span class="label">Dashboard</span>
 					</router-link>
 				</a-menu-item>
-				<a-menu-item key="analytics">
+				<!-- <a-menu-item key="analytics">
 					<router-link to="/analytics">
 						<div class="icon" style="text-align: center;">
 							<a-icon type="bar-chart" :style="{ fontSize: '18px', color: '#08c', marginLeft: '8px' }" />
 						</div>
 						<span class="label">Analytics</span>
 					</router-link>
-				</a-menu-item>
+				</a-menu-item> -->
 				<!-- <a-menu-item key="userManagement">
 					<router-link to="/userManagement">
 						<div class="icon" style="text-align: center;">

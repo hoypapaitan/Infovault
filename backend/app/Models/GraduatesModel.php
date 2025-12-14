@@ -27,6 +27,7 @@ class GraduatesModel extends Model
         'course',
         'major',
         'achievement',
+        'additionalAchievement',
         'gender',
         'created_by',
     ];

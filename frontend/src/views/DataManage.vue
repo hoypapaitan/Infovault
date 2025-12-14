@@ -96,9 +96,12 @@
                         </a-avatar>
                         <div style="display: inline-block; vertical-align: middle;">
                             <h6 class="m-0 text-dark font-semibold">{{ text }}</h6>
-                            <p class="m-0 text-muted" style="font-size: 12px;">SID: {{ record.studentId }}</p>
                         </div>
                     </div>
+                </template>
+
+                <template slot="studentId" slot-scope="text">
+                    <span style="font-family: 'Fira Mono', 'Consolas', 'monospace'; font-size: 13px; padding: 2px 8px; background: #f6f6f6; border-radius: 4px; display: inline-block; min-width: 90px; text-align: center; letter-spacing: 1px;">{{ text }}</span>
                 </template>
 
                 <template slot="gender" slot-scope="text">
@@ -174,46 +177,72 @@
         </a-modal>
 
         <!-- Add Single Entry Modal -->
-        <a-modal v-model="addSingleModal" title="Add Single Graduate Entry" centered @ok="saveSingleEntry" :confirmLoading="singleSaving">
+        <a-modal v-model="addSingleModal" title="Add Single Graduate Entry" centered @ok="saveSingleEntry" :confirmLoading="singleSaving" :width="700">
             <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
-                <a-form-item label="Student ID" required><a-input v-model="singleRecord.studentId" /></a-form-item>
+                <a-form-item label="Student ID" required>
+                    <a-input
+                        v-model="singleRecord.studentId"
+                        maxlength="10"
+                        placeholder="00-00-0000"
+                        @input="onStudentIdInput"
+                    />
+                </a-form-item>
                 <a-form-item label="Name" required><a-input v-model="singleRecord.name" /></a-form-item>
-                <a-form-item label="Address"><a-input v-model="singleRecord.address" /></a-form-item>
-                <a-form-item label="Class of"><a-input v-model="singleRecord.yearGraduated" /></a-form-item>
-                <a-form-item label="Program Covered">
-                    <a-select v-model="singleRecord.program" placeholder="Select Program Covered" allowClear>
+                <a-form-item label="Address" required><a-input v-model="singleRecord.address" /></a-form-item>
+                <a-form-item label="Class of" required>
+                    <a-select v-model="singleRecord.yearGraduated" placeholder="Select Year" allowClear>
+                        <a-select-option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Program Covered" required>
+                    <a-select v-model="singleRecord.program" placeholder="Academic Program" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in programsOpt" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Course">
-                    <a-select v-model="singleRecord.course" placeholder="Select Course" allowClear>
+                <a-form-item label="Course" required>
+                    <a-select v-model="singleRecord.course" placeholder="Courses" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in coursesOpt[singleRecord.program]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Major In">
-                    <a-select v-model="singleRecord.major" placeholder="Select Major" allowClear>
+                <a-form-item label="Major In" required>
+                    <a-select v-model="singleRecord.major" placeholder="Majors" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in majorOptions[singleRecord.course]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Achievement">
-                    <a-select v-model="singleRecord.achievement" placeholder="Select Achievement" allowClear>
+                <a-form-item label="Achievement" required>
+                    <a-select v-model="singleRecord.achievement" placeholder="Select Achievement" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Sex" required>
-                    <a-select v-model="singleRecord.gender">
-                        <a-select-option value="Male">Male</a-select-option>
-                        <a-select-option value="Female">Female</a-select-option>
+                <a-form-item label="Additional Achievement">
+                    <a-select
+                        v-model="singleRecord.additionalAchievement"
+                        mode="multiple"
+                        placeholder="Select Additional Achievement(s)"
+                        allowClear
+                        :dropdownMatchSelectWidth="false"
+                    >
+                        <a-select-option value="With Honor">With Honor</a-select-option>
+                        <a-select-option value="With High Honor">With High Honor</a-select-option>
+                        <a-select-option value="With Highest Honor">With Highest Honor</a-select-option>
                     </a-select>
                 </a-form-item>
+                <a-form-item label="Sex" required>
+                        <a-select v-model="singleRecord.gender">
+                                <a-select-option value="Male">Male</a-select-option>
+                                <a-select-option value="Female">Female</a-select-option>
+                        </a-select>
+                </a-form-item>
+
+                
             </a-form>
         </a-modal>
 
@@ -239,48 +268,65 @@
         </a-modal>
 
         <!-- Edit Modal -->
-        <a-modal v-model="editModal" title="Edit Graduate Record" @ok="saveEdit" :confirmLoading="editSaving">
-             <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
-                <a-form-item label="Student ID"><a-input v-model="editRecord.studentId" /></a-form-item>
-                <a-form-item label="Name"><a-input v-model="editRecord.name" /></a-form-item>
-                <a-form-item label="Address"><a-input v-model="editRecord.address" /></a-form-item>
-                <a-form-item label="Class of"><a-input v-model="editRecord.yearGraduated" /></a-form-item>
-                <a-form-item label="Program Covered">
-                    <a-select v-model="editRecord.program" placeholder="Select Program Covered" allowClear>
+        <a-modal v-model="editModal" title="Edit Graduate Record" @ok="saveEdit" :confirmLoading="editSaving" :width="700">
+            <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+                <a-form-item label="Student ID" required>
+                    <a-input
+                        v-model="editRecord.studentId"
+                        maxlength="10"
+                        placeholder="00-00-0000"
+                        @input="onEditStudentIdInput"
+                    />
+                </a-form-item>
+                <a-form-item label="Name" required><a-input v-model="editRecord.name" /></a-form-item>
+                <a-form-item label="Address" required><a-input v-model="editRecord.address" /></a-form-item>
+                <a-form-item label="Class of" required>
+                    <a-select v-model="editRecord.yearGraduated" placeholder="Select Year" allowClear>
+                        <a-select-option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="Program Covered" required>
+                    <a-select v-model="editRecord.program" placeholder="Academic Program" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in programsOpt" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Course">
-                    <a-select v-model="editRecord.course" placeholder="Select Course" allowClear>
+                <a-form-item label="Course" required>
+                    <a-select v-model="editRecord.course" placeholder="Courses" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in coursesOpt[editRecord.program]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Major In">
-                    <a-select v-model="editRecord.major" placeholder="Select Major" allowClear>
+                <a-form-item label="Major In" required>
+                    <a-select v-model="editRecord.major" placeholder="Majors" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in majorOptions[editRecord.course]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Achievement">
-                    <a-select v-model="editRecord.achievement" placeholder="Select Achievement" allowClear>
+                <a-form-item label="Achievement" required>
+                    <a-select v-model="editRecord.achievement" placeholder="Select Achievement" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Achievement">
-                    <a-select v-model="editRecord.achievement" placeholder="Select Achievement" allowClear>
-                        <a-select-option v-for="item in achievementOptions" :key="item" :value="item">
-                            {{ item }}
-                        </a-select-option>
+                <a-form-item label="Additional Achievement">
+                    <a-select
+                        v-model="editRecord.additionalAchievement"
+                        mode="multiple"
+                        placeholder="Select Additional Achievement(s)"
+                        allowClear
+                        :dropdownMatchSelectWidth="false"
+                    >
+                        <a-select-option value="With Honor">With Honor</a-select-option>
+                        <a-select-option value="With High Honor">With High Honor</a-select-option>
+                        <a-select-option value="With Highest Honor">With Highest Honor</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Sex">
+                <a-form-item label="Sex" required>
                     <a-select v-model="editRecord.gender">
                         <a-select-option value="Male">Male</a-select-option>
                         <a-select-option value="Female">Female</a-select-option>
@@ -288,7 +334,6 @@
                 </a-form-item>
             </a-form>
         </a-modal>
-
         <ModalPrintReport :openPrint="openPrint" :dataVal="filteredUser" @closePrint="openPrint = false"></ModalPrintReport>
     </div>
 </template>
@@ -303,6 +348,13 @@ export default {
         ModalPrintReport
     },
     computed: {
+        yearOptions() {
+            const start = 1997;
+            const end = new Date().getFullYear();
+            const years = [];
+            for (let y = end; y >= start; y--) years.push(y);
+            return years;
+        },
         filteredUser() {
             return this.users.filter(el =>
                 (this.selectedCourseFilter.length ? this.selectedCourseFilter.includes(el.course) : true) &&
@@ -312,6 +364,14 @@ export default {
         columns() {
             return [
                 { 
+                    title: 'STUDENT NUMBER', 
+                    dataIndex: 'studentId', 
+                    key: 'studentId', 
+                    scopedSlots: { customRender: 'studentId' }, 
+                    sorter: (a, b) => a.studentId.localeCompare(b.studentId), 
+                    width: 180 
+                },
+                { 
                     title: 'STUDENT', 
                     dataIndex: 'name', 
                     key: 'name', 
@@ -320,22 +380,41 @@ export default {
                     width: 280 
                 },
                 { 
-                    title: 'GENDER', 
+                    title: 'ADDRESS', 
+                    dataIndex: 'address', 
+                    key: 'address', 
+                    scopedSlots: { customRender: 'address' }, 
+                    sorter: (a, b) => a.address.localeCompare(b.address), 
+                    width: 280 
+                },
+                { 
+                    title: 'SEX', 
                     dataIndex: 'gender', 
                     key: 'gender', 
-                    width: 120, 
+                    width: 120,
+                    sorter: (a, b) => a.gender.localeCompare(b.gender), 
                     scopedSlots: { customRender: 'gender' } 
                 },
                 { 
                     title: 'COURSE', 
                     dataIndex: 'course', 
-                    key: 'course', 
+                    key: 'course',
+                    sorter: (a, b) => a.course.localeCompare(b.course), 
                     scopedSlots: { customRender: 'course' } 
+                },
+                { 
+                    title: 'CLASS OF', 
+                    dataIndex: 'yearGraduated', 
+                    key: 'yearGraduated',
+                    sorter: (a, b) => a.yearGraduated.localeCompare(b.yearGraduated), 
+                    scopedSlots: { customRender: 'yearGraduated' } ,
+                    width: 130 
                 },
                 { 
                     title: 'ACHIEVEMENT', 
                     dataIndex: 'achievement', 
                     key: 'achievement', 
+                    sorter: (a, b) => a.achievement.localeCompare(b.achievement), 
                     scopedSlots: { customRender: 'achievement' }, 
                     width: 200 
                 },
@@ -386,7 +465,9 @@ export default {
             editSaving: false,
             addUserModal: false, // Fixed spelling
             addSingleModal: false,
-            singleRecord: {},
+            singleRecord: {
+                additionalAchievement: [],
+            },
             singleSaving: false,
             openPrint: false,
             users: [],
@@ -397,9 +478,6 @@ export default {
             schoolYearFilter: [],
             selectedSchoolYearFilter: [],
             achievementOptions: [
-                "With Honor",
-                "With High Honor",
-                "With Highest Honor",
                 "Cum Laude",
                 "Magna Cum Laude",
                 "Summa Cum Laude",
@@ -517,6 +595,25 @@ export default {
         this.getList();
     },
     methods: {
+        onEditStudentIdInput(e) {
+            // Enforce format 00-00-0000, max 10 chars
+            let value = e.target.value.replace(/[^0-9-]/g, '').slice(0, 10);
+            // Optionally auto-insert dashes
+            if (value.length > 2 && value[2] !== '-') value = value.slice(0, 2) + '-' + value.slice(2);
+            if (value.length > 5 && value[5] !== '-') value = value.slice(0, 5) + '-' + value.slice(5);
+            this.editRecord.studentId = value;
+        },
+        /**
+         * Mask and format studentId as 00-00-0000, max 10 chars
+         */
+        onStudentIdInput(e) {
+            let value = e.target.value.replace(/[^0-9]/g, '');
+            if (value.length > 8) value = value.slice(0, 8);
+            let masked = value;
+            if (value.length > 4) masked = value.slice(0,2) + '-' + value.slice(2,4) + '-' + value.slice(4);
+            else if (value.length > 2) masked = value.slice(0,2) + '-' + value.slice(2);
+            this.singleRecord.studentId = masked;
+        },
         // FIX: The core pagination method
         handleTableChange(pagination, filters, sorter) {
             const pager = { ...this.pagination };
@@ -532,7 +629,7 @@ export default {
                 'Cum Laude': 'green', 
                 'Regular Graduate': 'blue' 
             };
-            return colorMap[achievement] || 'default';
+            return colorMap[achievement] || 'skyblue';
         },
         getAvatarColor(name) {
             const colors = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#87d068', '#1890ff', '#eb2f96'];
