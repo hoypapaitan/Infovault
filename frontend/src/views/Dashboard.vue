@@ -30,15 +30,16 @@
                 </a-col>
             </a-row>
         </a-card>
-        <!-- Program/Course/Major/Year Navigation with Breadcrumbs and Back Button in Card Header -->
+        <!-- School/Course/Major/Year Navigation with Breadcrumbs and Back Button in Card Header -->
         <a-card class="mb-24" :bordered="false" :bodyStyle="{padding: '18px 24px 10px 24px'}">
-            <div style="display: flex; align-items: center;  margin-bottom: 10px;">
-                <a-button v-if="selectedProgram || selectedCourse || selectedMajor || selectedYear" type="dashed" icon="arrow-left" @click="goBackNav">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <a-button v-if="selectedSchool || selectedCourse || selectedMajor || selectedYear" type="dashed" icon="arrow-left" @click="goBackNav">
                     Back
                 </a-button>
                 <a-breadcrumb style="margin-left: 20px;">
-                    <a-breadcrumb-item v-if="selectedProgram" @click.native="goBackTo('program')" style="cursor:pointer;">
-                        {{ selectedProgram }}
+                    <a-breadcrumb-item v-if="selectedSchool" @click.native="goBackTo('school')" style="cursor:pointer;">
+                        <img v-if="selectedSchoolLogo" :src="selectedSchoolLogo" alt="logo" style="height:20px;vertical-align:middle;margin-right:6px;" />
+                        {{ selectedSchool }}
                     </a-breadcrumb-item>
                     <a-breadcrumb-item v-if="selectedCourse" @click.native="goBackTo('course')" style="cursor:pointer;">
                         {{ selectedCourse }}
@@ -50,21 +51,20 @@
                         {{ selectedYear }}
                     </a-breadcrumb-item>
                 </a-breadcrumb>
-                
             </div>
             <a-row :gutter="[16, 16]" style="margin-top: 10px;">
-                <!-- Step 1: Program Cards -->
-                <template v-if="!selectedProgram">
-                    <a-col v-for="program in programList" :key="program" :xs="12" :sm="8" :md="6" :lg="4">
-                        <div class="folder-card small-folder" @click="selectProgram(program)">
-                            <a-icon type="folder" style="font-size:32px;color:#52c41a;" />
-                            <div class="folder-label">{{ program }}</div>
+                <!-- Step 1: School Cards -->
+                <template v-if="!selectedSchool">
+                    <a-col v-for="school in schoolList" :key="school.name" :xs="12" :sm="8" :md="6" :lg="4">
+                        <div class="folder-card small-folder" @click="selectSchool(school)">
+                            <img v-if="school.logo" :src="school.logo" alt="logo" style="height:32px;display:block;margin:0 auto 6px auto;" />
+                            <div class="folder-label">{{ school.name }}</div>
                         </div>
                     </a-col>
                 </template>
                 <!-- Step 2: Course Cards -->
-                <template v-else-if="selectedProgram && !selectedCourse">
-                    <a-col v-for="course in courseList[selectedProgram]" :key="course" :xs="12" :sm="8" :md="6" :lg="4">
+                <template v-else-if="selectedSchool && !selectedCourse">
+                    <a-col v-for="course in courseList[selectedSchool]" :key="course" :xs="12" :sm="8" :md="6" :lg="4">
                         <div class="folder-card small-folder" @click="selectCourse(course)">
                             <a-icon type="folder" style="font-size:28px;color:#1890ff;" />
                             <div class="folder-label">{{ course }}</div>
@@ -73,32 +73,35 @@
                 </template>
             </a-row>
         </a-card>
+
+        <!-- School Display Card below analytics cards -->
+        <a-row class="mb-24">
+            <a-col :xs="24">
+                <a-card class="school-display-card" :bordered="false" v-if="selectedSchool">
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <img v-if="selectedSchoolLogo" :src="selectedSchoolLogo" alt="logo" style="height:40px;" />
+                        <div>
+                            <h3 style="margin:0;">{{ selectedSchool }}</h3>
+                            <div class="text-muted">School Display Card (details/description can go here)</div>
+                        </div>
+                    </div>
+                </a-card>
+            </a-col>
+        </a-row>
     
         <!-- Filters -->
-        <a-card :bordered="false" class="mb-24 mt-24" v-if="selectedCourse">
-            <a-row :gutter="16" align="middle">
-                <a-col :span="12" :md="8">
-                    <a-input
-                        v-model="nameSearch"
-                        placeholder="Search by name..."
-                        @change="applyFilters"
-                        allowClear
-                        size="large"
-                    >
-                        <a-icon slot="prefix" type="search" />
-                    </a-input>
-                </a-col>
-                <a-col :span="12" :md="8">
-                    <a-button @click="filterByYear(selectedYear)" icon="reload" block size="large">
-                        Reset Search
-                    </a-button>
-                </a-col>
-            </a-row>
-        </a-card>
+        <dashboard-filters
+            v-if="selectedCourse"
+            :course-options="courseList[selectedSchool] || []"
+            :class-year-options="yearOptions"
+            :loading="loading"
+            @filters-changed="onDashboardFiltersChanged"
+        />
+    
 
         <!-- Table -->
         <transition name="fade" mode="out-in">
-            <a-card :bordered="false" class="header-solid table-card mb-24 mt-24 " v-if="selectedCourse" key="table">
+            <a-card :bordered="false" class="header-solid table-card mb-24 mt-24 " v-if="selectedCourse || selectedSchool" key="table">
                 <div slot="title" style="display: flex; align-items: center;">
                     <a-avatar shape="square" style="background-color: #f6ffed; color: #52c41a" icon="table" class="mr-2" />
                     <div>
@@ -137,9 +140,9 @@
                         </span>
                     </template>
 
-                    <template slot="course" slot-scope="text">
-                        <a-tooltip :title="text">
-                            <span><a-icon type="book" theme="twoTone" class="mr-2" /> {{ text }}</span>
+                    <template slot="course" slot-scope="text, record">
+                        <a-tooltip :title="getCourseName(text)">
+                            <span><a-icon type="book" theme="twoTone" class="mr-2" /> {{ getCourseName(text) }}</span>
                         </a-tooltip>
                     </template>
 
@@ -176,7 +179,7 @@
                 </a-table>
             </a-card>
 
-            <div v-if="!loading && selectedCourse && filteredGraduates.length === 0" class="empty-state-container" key="empty">
+            <div v-if="!loading && (selectedCourse || selectedSchool) && filteredGraduates.length === 0" class="empty-state-container" key="empty">
                 <a-empty 
                     image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                     :image-style="{ height: '150px' }"
@@ -215,99 +218,8 @@
             </a-col>
         </a-row>
 
+        
         <a-row :gutter="[24, 24]" class="mb-24">
-            <a-col :xs="24" :lg="24">
-                <a-card class="chart-card" :bordered="false" :loading="loading">
-                    <template #title>
-                        <span class="card-title"><a-icon type="line-chart" /> Graduates per Year</span>
-                    </template>
-                    <template #extra>
-                        <a-radio-group v-model="graduatesChartType" @change="updateGraduatesChart" size="small">
-                            <a-radio-button value="line">Line</a-radio-button>
-                            <a-radio-button value="bar">Bar</a-radio-button>
-                        </a-radio-group>
-                    </template>
-                    <div class="chart-container">
-                        <canvas id="graduatesChart" ref="graduatesChart"></canvas>
-                    </div>
-                </a-card>
-
-                <a-card class="chart-card" :style="{marginTop: '20px'}" :bordered="false" :loading="loading">
-                    <template #title>
-                        <span class="card-title"><a-icon type="bar-chart" /> Course Graduation Metrics</span>
-                    </template>
-                    <template #extra>
-                        <a-select v-model="courseMetricsView" @change="updateCourseMetrics" style="width: 150px" size="small">
-                            <a-select-option value="chart">Chart View</a-select-option>
-                            <a-select-option value="table">Table View</a-select-option>
-                        </a-select>
-                    </template>
-                    <div v-if="courseMetricsView === 'chart'" class="chart-container">
-                        <canvas id="courseChart" ref="courseChart"></canvas>
-                    </div>
-                    <div v-else>
-                        <a-table 
-                            :columns="courseMetricsColumns"
-                            :data-source="courseMetricsData"
-                            :pagination="{ pageSize: 5 }"
-                            size="small"
-                        >
-                            <template slot="completion_rate" slot-scope="text">
-                                <a-progress 
-                                    :percent="text" 
-                                    :stroke-color="text >= 90 ? '#52c41a' : text >= 70 ? '#faad14' : '#ff4d4f'"
-                                    size="small"
-                                />
-                            </template>
-                        </a-table>
-                    </div>
-                </a-card>
-            </a-col>
-        </a-row>
-        <a-row :gutter="[24, 24]" class="mb-24">
-            <a-col :xs="24" :lg="10">
-                <a-card class="achievement-card" :bordered="false" :loading="loading">
-                    <template #title>
-                        <span class="card-title"><a-icon type="trophy" /> Achievements Distribution Per Year</span>
-                    </template>
-                    <template #extra>
-                        <a-select v-model="selectedAchievementYear" @change="updateAchievementsChart" size="small" style="width: 120px;">
-                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
-                        </a-select>
-                    </template>
-                    <div class="achievements-list">
-                        <div v-for="achievement in achievementsData" :key="achievement.type" class="achievement-item">
-                            <div class="achievement-header">
-                                <span class="achievement-title">
-                                    <a-icon type="star" :style="{ color: achievement.color }" />
-                                    {{ achievement.title }}
-                                </span>
-                                <a-badge :count="achievement.count" :number-style="{ backgroundColor: achievement.color }" />
-                            </div>
-                            <a-progress 
-                                :percent="achievement.percentage" 
-                                :stroke-color="achievement.color"
-                                :stroke-width="8"
-                                :show-info="true"
-                            />
-                        </div>
-                    </div>
-                </a-card>
-
-                <a-card class="chart-card mt-10" :bordered="false" :loading="loading">
-                    <template #title>
-                        <span class="card-title"><a-icon type="pie-chart" /> Gender Distribution Per Year</span>
-                    </template>
-                    <template #extra>
-                        <a-select v-model="selectedGenderYear" @change="updateGenderChart" size="small" style="width: 120px;">
-                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
-                        </a-select>
-                    </template>
-                    <div class="chart-container">
-                        <canvas id="genderChart" ref="genderChart"></canvas>
-                    </div>
-                </a-card>
-            </a-col>
             <a-col :xs="24" :lg="14">
                 <a-card class="chart-card" :bordered="false" :loading="loading">
                     <template #title>
@@ -358,9 +270,75 @@
                     </div>
                 </a-card>
             </a-col>
+            <a-col :xs="24" :lg="10">
+                <a-card class="chart-card" :bordered="false" :loading="loading">
+                    <template #title>
+                        <span class="card-title"><a-icon type="pie-chart" /> Gender Distribution Per Year</span>
+                    </template>
+                    <template #extra>
+                        <a-select v-model="selectedGenderYear" @change="updateGenderChart" size="small" style="width: 120px;">
+                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
+                        </a-select>
+                    </template>
+                    <div class="chart-container">
+                        <canvas id="genderChart" ref="genderChart"></canvas>
+                    </div>
+                </a-card>
+            </a-col>
+            
         </a-row>
-        <a-row :gutter="[24, 24]">
+        <a-row :gutter="[24, 24]" class="mb-24">
             <a-col :xs="24" :lg="24">
+                <a-card class="chart-card" :bordered="false" :loading="loading">
+                    <template #title>
+                        <span class="card-title"><a-icon type="line-chart" /> Graduates per Year</span>
+                    </template>
+                    <template #extra>
+                        <a-radio-group v-model="graduatesChartType" @change="updateGraduatesChart" size="small">
+                            <a-radio-button value="line">Line</a-radio-button>
+                            <a-radio-button value="bar">Bar</a-radio-button>
+                        </a-radio-group>
+                    </template>
+                    <div class="chart-container">
+                        <canvas id="graduatesChart" ref="graduatesChart"></canvas>
+                    </div>
+                </a-card>
+
+                <a-card class="chart-card" :style="{marginTop: '20px'}" :bordered="false" :loading="loading">
+                    <template #title>
+                        <span class="card-title"><a-icon type="bar-chart" /> Course Graduation Metrics</span>
+                    </template>
+                    <template #extra>
+                        <a-select v-model="courseMetricsView" @change="updateCourseMetrics" style="width: 150px" size="small">
+                            <a-select-option value="chart">Chart View</a-select-option>
+                            <a-select-option value="table">Table View</a-select-option>
+                        </a-select>
+                    </template>
+                    <div v-if="courseMetricsView === 'chart'" class="chart-container">
+                        <canvas id="courseChart" ref="courseChart"></canvas>
+                    </div>
+                    <div v-else>
+                        <a-table 
+                            :columns="courseMetricsColumns"
+                            :data-source="courseMetricsData"
+                            :pagination="{ pageSize: 5 }"
+                            size="small"
+                        >
+                            <template slot="completion_rate" slot-scope="text">
+                                <a-progress 
+                                    :percent="text" 
+                                    :stroke-color="text >= 90 ? '#52c41a' : text >= 70 ? '#faad14' : '#ff4d4f'"
+                                    size="small"
+                                />
+                            </template>
+                        </a-table>
+                    </div>
+                </a-card>
+            </a-col>
+        </a-row>
+
+        <a-row :gutter="[24, 24]">
+            <a-col :xs="24" :lg="14">
                 <a-card class="yoy-card" :bordered="false" :loading="loading">
                     <template #title>
                         <span class="card-title"><a-icon type="calendar" /> Year-over-Year Analysis</span>
@@ -400,7 +378,37 @@
                     </div>
                 </a-card>
             </a-col>
+            <a-col :xs="24" :lg="10">
+                <a-card class="achievement-card" :bordered="false" :loading="loading">
+                    <template #title>
+                        <span class="card-title"><a-icon type="trophy" /> Achievements Distribution Per Year</span>
+                    </template>
+                    <template #extra>
+                        <a-select v-model="selectedAchievementYear" size="small" style="width: 120px;">
+                            <a-select-option v-for="year in Object.keys(analyticsData.yearlyGender).sort((a,b)=>b-a)" :key="year" :value="year">{{ year }}</a-select-option>
+                        </a-select>
+                    </template>
+                    <div class="achievements-list">
+                        <div v-for="achievement in achievementsData" :key="achievement.type" class="achievement-item">
+                            <div class="achievement-header">
+                                <span class="achievement-title">
+                                    <a-icon type="star" :style="{ color: achievement.color }" />
+                                    {{ achievement.title }}
+                                </span>
+                                <a-badge :count="achievement.count" :number-style="{ backgroundColor: achievement.color }" />
+                            </div>
+                            <a-progress 
+                                :percent="achievement.percentage" 
+                                :stroke-color="achievement.color"
+                                :stroke-width="8"
+                                :show-info="true"
+                            />
+                        </div>
+                    </div>
+                </a-card>
+            </a-col>
         </a-row>
+        
         
 
         <!-- View Modal -->
@@ -470,22 +478,43 @@
 import {jwtDecode} from 'jwt-decode';
 import PdfExport from '@/components/Export/PdfExport.vue';
 import CardDashboard from '@/components/Cards/CardDashboard.vue';
+import DashboardFilters from '@/components/Filters/DashboardFilters.vue';
 import Chart from 'chart.js/auto';
 
 export default {
     name: 'GraduateDashboard',
     components: {
         PdfExport,
-        CardDashboard
+        CardDashboard,
+        DashboardFilters
     },
     data() {
         return {
-                        selectedAchievementYear: null, // for year selection in achievements
+            // Color mapping for each school (should match logos and branding)
+            schoolColors: {
+                'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES': '#228B22', // dark green
+                'SCHOOL OF ARTS AND SCIENCES': '#ff69b4', // pink
+                'SCHOOL OF EDUCATION': '#0033cc', // blue
+                'SCHOOL OF ENGINEERING': '#800000', // maroon
+                'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES': '#39FF14', // yellow green
+                'SCHOOL OF INDUSTRIAL TECHNOLOGY': '#000000', // black
+                'SCHOOL OF INFORMATION TECHNOLOGY': '#ff6600', // orange
+                'COLLEGE OF LAW': '#800080', // violet
+                'SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT': '#ffe600', // yellow
+                'SCHOOL OF GRADUATE STUDIES': '#00e6ff' // sky blue
+            },
+            dashboardFilters: {
+                course: null,
+                classYear: null,
+                term: null
+            },
+            selectedAchievementYear: null, // for year selection in achievements
             loading: false,
             allGraduates: [],
             filteredGraduates: [],
             nameSearch: '',
-            selectedProgram: null,
+            selectedSchool: null,
+            selectedSchoolLogo: null,
             selectedCourse: null,
             selectedMajor: null,
             selectedYear: null,
@@ -514,8 +543,19 @@ export default {
                 { title: 'Total Graduates', dataIndex: 'totalGraduates', key: 'totalGraduates', align: 'center' },
                 { title: 'Growth Rate', dataIndex: 'growthRate', key: 'growthRate', align: 'center' }
             ],
-            // Navigation data
-            programList: ['GRADUATE', 'UNDERGRADUATE', 'DIPLOMA/CERTIFICATE COURSES'],
+            // School list with logo (updated paths)
+            schoolList: [
+                { name: 'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES', logo: '/images/schools/ASCOT School of Agricultural Science.jpg' },
+                { name: 'SCHOOL OF ARTS AND SCIENCES', logo: '/images/schools/ASCOT School of Arts and Sciences.jpg' },
+                { name: 'SCHOOL OF EDUCATION', logo: '/images/schools/ASCOT School of Education.jpg' },
+                { name: 'SCHOOL OF ENGINEERING', logo: '/images/schools/ASCOT School of Engineering.jpg' },
+                { name: 'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES', logo: '/images/schools/ASCOT School of Forestry and Environment Sciences.jpg' },
+                { name: 'SCHOOL OF INDUSTRIAL TECHNOLOGY', logo: '/images/schools/ASCOT School of Industrial Technology.jpg' },
+                { name: 'SCHOOL OF INFORMATION TECHNOLOGY', logo: '/images/schools/ASCOT School of Information Technology.jpg' },
+                { name: 'COLLEGE OF LAW', logo: '/images/schools/ASCOT College of Law.jpg' },
+                { name: 'SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT', logo: '/images/schools/ASCOT School of Accountancy and Business Management.jpg' },
+                { name: 'SCHOOL OF GRADUATE STUDIES', logo: '/images/schools/ASCOT School of Graduate Studies.jpg' }
+            ],
             courseList: {
                 'GRADUATE': [
                     'MASTER OF ARTS IN EDUCATION',
@@ -610,7 +650,7 @@ export default {
             // Centralized pagination object
             pagination: {
                 current: 1,
-                pageSize: 25,
+                pageSize: 10,
                 showSizeChanger: false,
                 showQuickJumper: true,
                 showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`
@@ -688,6 +728,12 @@ export default {
             ]
         }
     },
+    watch: {
+        dashboardFilters: {
+            handler: 'applyFilters',
+            deep: true
+        }
+    },
     computed: {
         user: function () {
             let raw = localStorage.getItem('userToken')
@@ -762,6 +808,11 @@ export default {
                 growthRate: Math.floor(Math.random() * 20) - 5 // Mocking growth rate for now
             }));
         },
+        yearOptions() {
+            // Get all unique years from allGraduates
+            const years = this.allGraduates.map(g => g.yearGraduated).filter(Boolean);
+            return Array.from(new Set(years)).sort((a, b) => b - a);
+        },
         yearAnalysis() {
             const years = Object.keys(this.analyticsData.graduatesPerYear).sort((a, b) => b - a);
             return years.map((year, index) => {
@@ -793,13 +844,69 @@ export default {
         this.loadAnalyticsData();
     },
     methods: {
+        // ...existing code...
+        getCourseName(course) {
+            if (!course) return '';
+            // Remove school prefix if present
+            const schools = Object.keys(this.schoolColors);
+            for (const school of schools) {
+                if (course.startsWith(school + ' - ')) {
+                    return course.replace(school + ' - ', '');
+                }
+                if (course === school) {
+                    return '';
+                }
+            }
+            return course;
+        },
+        onDashboardFiltersChanged(filters) {
+            this.dashboardFilters = filters;
+        },
+        applyFilters() {
+            let grads = [...this.allGraduates];
+            // Navigation filters
+            if (this.selectedSchool) {
+                grads = grads.filter(g => g.school === this.selectedSchool);
+            }
+            if (this.selectedCourse) {
+                grads = grads.filter(g => g.course === this.selectedCourse);
+            }
+            if (this.selectedMajor) {
+                grads = grads.filter(g => g.major === this.selectedMajor);
+            }
+            if (this.selectedYear) {
+                grads = grads.filter(g => String(g.yearGraduated) === String(this.selectedYear));
+            }
+            // DashboardFilters.vue filters
+            if (this.dashboardFilters) {
+                if (this.dashboardFilters.classYear && this.dashboardFilters.classYear !== 'all') {
+                    grads = grads.filter(g => String(g.yearGraduated) === String(this.dashboardFilters.classYear));
+                }
+                if (this.dashboardFilters.course && this.dashboardFilters.course !== 'all') {
+                    grads = grads.filter(g => g.course === this.dashboardFilters.course);
+                }
+                // Add more filter fields as you extend DashboardFilters.vue
+            }
+            this.filteredGraduates = grads;
+        },
+        // School navigation handler
+        selectSchool(school) {
+            this.selectedSchool = school.name;
+            this.selectedSchoolLogo = school.logo;
+            this.selectedCourse = null;
+            this.selectedMajor = null;
+            this.selectedYear = null;
+            this.applyFilters();
+        },
         Chart,
         getTopCourseForYear(year) {
-             // Logic could be expanded if course-per-year data is stored deeply
-             return this.analyticsData.courseMetrics[0]?.course || 'N/A';
+            // Logic could be expanded if course-per-year data is stored deeply
+            return this.analyticsData.courseMetrics[0]?.course || 'N/A';
         },
         goBackTo(level) {
-            if (level === 'program') {
+            if (level === 'school') {
+                this.selectedSchool = null;
+                this.selectedSchoolLogo = null;
                 this.selectedCourse = null;
                 this.selectedMajor = null;
                 this.selectedYear = null;
@@ -810,6 +917,69 @@ export default {
                 this.selectedYear = null;
             }
             this.applyFilters();
+        },
+
+        // --- Graduates per School per Year Data ---
+        graduatesPerSchoolPerYear() {
+            // Build { [school]: { [year]: count } }
+            const result = {};
+            this.allGraduates.forEach(g => {
+                const school = g.school;
+                const year = g.yearGraduated;
+                if (!school || !year) return;
+                if (!result[school]) result[school] = {};
+                result[school][year] = (result[school][year] || 0) + 1;
+            });
+            return result;
+        },
+        // --- Create Graduates per School per Year Chart ---
+        createGraduatesPerSchoolChart() {
+            const canvas = document.getElementById('graduatesPerSchoolChart');
+            if (!canvas) return;
+            const Chart = this.Chart || window.Chart;
+            // Destroy existing
+            if (this.graduatesPerSchoolChartInstance) {
+                this.graduatesPerSchoolChartInstance.destroy();
+                this.graduatesPerSchoolChartInstance = null;
+            }
+            const ctx = canvas.getContext('2d');
+            const dataBySchool = this.graduatesPerSchoolPerYear();
+            // Get all years (1997 to present)
+            const years = [];
+            const currentYear = new Date().getFullYear();
+            for (let y = 1997; y <= currentYear; y++) years.push(String(y));
+            // Build datasets
+            const datasets = Object.keys(dataBySchool).map(school => {
+                const color = this.schoolColors[school] || '#888';
+                return {
+                    label: school,
+                    data: years.map(y => dataBySchool[school][y] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 2
+                };
+            });
+            this.graduatesPerSchoolChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Graduates' } },
+                        x: { title: { display: true, text: 'Year' } }
+                    }
+                }
+            });
         },
 
         async loadGraduateData() {
@@ -855,30 +1025,14 @@ export default {
                 this.selectedMajor = null;
             } else if (this.selectedCourse) {
                 this.selectedCourse = null;
-            } else if (this.selectedProgram) {
-                this.selectedProgram = null;
+            } else if (this.selectedSchool) {
+                this.selectedSchool = null;
+                this.selectedSchoolLogo = null;
             }
             this.applyFilters();
         },
         // Filtering
-        applyFilters() {
-            let filtered = [...this.allGraduates];
-            if (this.selectedProgram) {
-                filtered = filtered.filter(g => g.program === this.selectedProgram);
-            }
-            if (this.selectedCourse) {
-                filtered = filtered.filter(g => g.course === this.selectedCourse);
-            }
-            // Skip filtering by major/year for immediate graduate list after course selection
-            if (this.nameSearch) {
-                filtered = filtered.filter(g => g.name.toLowerCase().includes(this.nameSearch.toLowerCase()));
-            }
-            this.filteredGraduates = filtered;
-            // Reset pagination
-            const pager = { ...this.pagination };
-            pager.current = 1;
-            this.pagination = pager;
-        },
+        // Removed duplicate applyFilters. All filtering uses the comprehensive method above.
         // Table Change
         handleTableChange(pagination, filters, sorter) {
             const pager = { ...this.pagination };
@@ -886,12 +1040,7 @@ export default {
             pager.pageSize = pagination.pageSize;
             this.pagination = pager;
         },
-        onPageSizeChange(size) {
-            const pager = { ...this.pagination };
-            pager.pageSize = size;
-            pager.current = 1;
-            this.pagination = pager;
-        },
+        // Remove onPageSizeChange since page size is fixed
         // View
         viewGraduateDetails(graduate) {
             this.selectedGraduate = graduate;
@@ -950,7 +1099,7 @@ export default {
                 'Cum Laude': 'green',
                 'Regular Graduate': 'blue'
             };
-            return colorMap[achievement] || 'default';
+            return colorMap[achievement] || 'skyblue';
         },
         getAvatarColor(name) {
             const colors = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#87d068', '#1890ff', '#eb2f96'];
@@ -991,13 +1140,15 @@ export default {
             const yearlyGender = {};
             const genderTotals = { male: 0, female: 0 };
             const courseStats = {};
+            const courseToSchool = {};
             const achievementCounts = {};
-            
+
             // Process raw list
             list.forEach(grad => {
                 const year = grad.yearGraduated || 'Unknown';
                 const gender = (grad.gender || 'Unknown').toLowerCase();
                 const course = grad.course || 'Unknown';
+                const school = grad.school || '';
                 const achievement = grad.achievement;
 
                 // Yearly Total
@@ -1015,6 +1166,10 @@ export default {
                 // Course Stats
                 if (!courseStats[course]) courseStats[course] = 0;
                 courseStats[course]++;
+                // Track school for each course (first seen wins)
+                if (course && school && !courseToSchool[course]) {
+                    courseToSchool[course] = school;
+                }
 
                 // Achievement Stats
                 if (achievement) {
@@ -1058,6 +1213,7 @@ export default {
             // Format Course Metrics
             this.analyticsData.courseMetrics = Object.keys(courseStats).map(course => ({
                 course: course,
+                school: courseToSchool[course] || '',
                 total_graduates: courseStats[course],
                 completion_rate: 95 + Math.floor(Math.random() * 5), // Mocked
                 avg_graduates_per_year: Math.round(courseStats[course] / Object.keys(yearlyTrends).length),
@@ -1285,36 +1441,42 @@ export default {
             const ctx = canvas.getContext('2d');
             const departments = {};
             this.analyticsData.courseMetrics.forEach(course => {
+                console.log('[Dashboard] Processing course for department chart:', course.course);
                 // Use the full department name for matching
                 let dept = '';
-                if (course.course.includes('SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES')) dept = 'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES';
-                else if (course.course.includes('SCHOOL OF ARTS AND SCIENCES')) dept = 'SCHOOL OF ARTS AND SCIENCES';
-                else if (course.course.includes('SCHOOL OF EDUCATION')) dept = 'SCHOOL OF EDUCATION';
-                else if (course.course.includes('SCHOOL OF ENGINEERING')) dept = 'SCHOOL OF ENGINEERING';
-                else if (course.course.includes('SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES')) dept = 'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES';
-                else if (course.course.includes('SCHOOL OF INDUSTRIAL TECHNOLOGY')) dept = 'SCHOOL OF INDUSTRIAL TECHNOLOGY';
-                else if (course.course.includes('SCHOOL OF INFORMATION TECHNOLOGY')) dept = 'SCHOOL OF INFORMATION TECHNOLOGY';
-                else if (course.course.includes('COLLEGE OF LAW')) dept = 'COLLEGE OF LAW';
-                else if (course.course.includes('SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT')) dept = 'SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT';
-                else if (course.course.includes('SCHOOL OF GRADUATE STUDIES')) dept = 'SCHOOL OF GRADUATE STUDIES';
-                else dept = course.course.split(' ')[0];
+                if (course.school.includes('SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES')) dept = 'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES';
+                else if (course.school.includes('SCHOOL OF ARTS AND SCIENCES')) dept = 'SCHOOL OF ARTS AND SCIENCES';
+                else if (course.school.includes('SCHOOL OF EDUCATION')) dept = 'SCHOOL OF EDUCATION';
+                else if (course.school.includes('SCHOOL OF ENGINEERING')) dept = 'SCHOOL OF ENGINEERING';
+                else if (course.school.includes('SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES')) dept = 'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES';
+                else if (course.school.includes('SCHOOL OF INDUSTRIAL TECHNOLOGY')) dept = 'SCHOOL OF INDUSTRIAL TECHNOLOGY';
+                else if (course.school.includes('SCHOOL OF INFORMATION TECHNOLOGY')) dept = 'SCHOOL OF INFORMATION TECHNOLOGY';
+                else if (course.school.includes('COLLEGE OF LAW')) dept = 'COLLEGE OF LAW';
+                else if (course.school.includes('SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT')) dept = 'SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT';
+                else if (course.school.includes('SCHOOL OF GRADUATE STUDIES')) dept = 'SCHOOL OF GRADUATE STUDIES';
+                else dept = course.school.split(' ')[0];
                 departments[dept] = (departments[dept] || 0) + course.total_graduates;
             });
 
-            // Color mapping based on provided image
-            const deptColors = {
-                'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES': '#228B22', // dark green
-                'SCHOOL OF ARTS AND SCIENCES': '#ff69b4', // pink
-                'SCHOOL OF EDUCATION': '#0033cc', // blue
-                'SCHOOL OF ENGINEERING': '#800000', // red/maroon
-                'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES': '#39FF14', // yellow green
-                'SCHOOL OF INDUSTRIAL TECHNOLOGY': '#000000', // black
-                'SCHOOL OF INFORMATION TECHNOLOGY': '#ff6600', // orange
-                'COLLEGE OF LAW': '#800080', // violet
-                'SCHOOL OF ACCOUNTANCY AND BUSINESS MANAGEMENT': '#ffe600', // yellow
-                'SCHOOL OF GRADUATE STUDIES': '#00e6ff', // sky blue
-            };
-            const backgroundColors = Object.keys(departments).map(dept => deptColors[dept] || '#cccccc');
+            // Use color mapping from data, robust matching
+            const backgroundColors = Object.keys(departments).map(dept => {
+                // Try exact match first
+                let color = this.schoolColors[dept];
+                if (!color) {
+                    // Try case-insensitive and trimmed match
+                    const match = Object.keys(this.schoolColors).find(key => key.trim().toUpperCase() === dept.trim().toUpperCase());
+                    if (match) color = this.schoolColors[match];
+                }
+                if (!color) {
+                    // Try partial match
+                    const partial = Object.keys(this.schoolColors).find(key => dept.toUpperCase().includes(key.trim().toUpperCase()) || key.trim().toUpperCase().includes(dept.toUpperCase()));
+                    if (partial) color = this.schoolColors[partial];
+                }
+                if (!color) {
+                    console.warn('[Dashboard] No color mapping for department:', dept);
+                }
+                return color || '#cccccc';
+            });
 
             this.departmentsChartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -1330,7 +1492,28 @@ export default {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 24,
+                                font: { size: 14 },
+                                padding: 18,
+                                color: '#222',
+                                // Ensure full label display
+                                textAlign: 'left',
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    // Show full label and value
+                                    return context.label + ': ' + context.parsed;
+                                }
+                            }
+                        }
+                    }
                 }
             });
         },

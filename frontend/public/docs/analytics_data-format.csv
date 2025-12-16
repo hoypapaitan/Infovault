@@ -1,2 +1,1 @@
-studentId,name,address,gender,yearGraduated,program,course,major,achievement
-1234566789,Sample Graduate Name,"123 Sample Street, Sample City",Female,2024,,,,
+name,studentId,address,batch,yearGraduated,section,school,course,program,major,status,category,achievement,gender

@@ -29,6 +29,7 @@ class Graduates extends BaseController
             'name'          => $data['name'] ?? null,
             'address'       => $data['address'] ?? null,
             'yearGraduated' => $data['yearGraduated'] ?? ($data['year_graduated'] ?? null),
+            'school'        => $data['school'] ?? '',
             'course'        => $data['course'] ?? '',
             'major'         => $data['major'] ?? '',
             'program'       => $data['program'] ?? '',
@@ -80,6 +81,7 @@ class Graduates extends BaseController
                 'yearGraduated' => $payload['yearGraduated'] ?? ($payload['year_graduated'] ?? null),
                 'advisoryId'    => $payload['advisoryId'] ?? ($payload['advisory_id'] ?? null),
                 'section'       => $payload['section'] ?? null,
+                'school'        => $payload['school'] ?? '',
                 'course'        => $payload['course'] ?? '',
                 'major'         => $payload['major'] ?? '',
                 'program'       => $payload['program'] ?? '',
@@ -114,7 +116,7 @@ class Graduates extends BaseController
         
         // Whitelist fields to allow update - ADDED studentId
         $updateData = [];
-        $allowed = ['studentId', 'name', 'gender', 'course', 'achievement', 'yearGraduated', 'address', 'major', 'program', 'additionalAchievement'];
+        $allowed = ['studentId', 'name', 'gender', 'school', 'course', 'achievement', 'yearGraduated', 'address', 'major', 'program', 'additionalAchievement'];
         
         foreach($allowed as $field) {
             if(isset($data[$field])) {
@@ -176,6 +178,7 @@ class Graduates extends BaseController
         // Ensure all records have program, course, major, yearGraduated fields (for frontend navigation)
         foreach ($list as &$rec) {
             $rec['program'] = $rec['program'] ?? '';
+            $rec['school'] = $rec['school'] ?? '';
             $rec['course'] = $rec['course'] ?? '';
             $rec['major'] = $rec['major'] ?? '';
             $rec['yearGraduated'] = $rec['yearGraduated'] ?? '';

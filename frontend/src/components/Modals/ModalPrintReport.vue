@@ -83,81 +83,49 @@ export default ({
                 const pages = pdfDoc.getPages()
                 pages.forEach((elpage, index) => {
                     const { width, height } = elpage.getSize()
-                    
                     // --- HEADER TEXT ---
-                    elpage.drawText(`ASCOT GENDER ANALYTICS DASHBOARD`, {
+                    elpage.drawText(`ASCOT YEARBOOK GRADUATE MASTERLIST`, {
                         x: 20,
                         y: height - 25,
                         size: 14,
-                        font:fontBold,
+                        font: fontBold,
                         color: rgb(0, 0, 0),
                     })
-                    elpage.drawText(`GENDER EQUALITY DATA REPORT`, {
+                    elpage.drawText(`Generated: ${moment().format('MMMM D, YYYY')}` , {
                         x: 20,
                         y: height - 40,
-                        size: 12,
-                        font:fontBold,
+                        size: 10,
+                        font: fontBold,
                         color: rgb(0, 0, 0),
                     })
-                    
                     // --- TABLE HEADERS ---
-                    elpage.drawText(`Course`, {
-                        x: 15, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`School Year`, {
-                        x: 210, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`Report`, {
-                        x: 270, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`Year`, {
-                        x: 320, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`Term`, {
-                        x: 370, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`Male`, {
-                        x: 470, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
-                    elpage.drawText(`Female`, {
-                        x: 520, y: height - 80, size: 9, font:fontBold, color: rgb(0, 0, 0),
-                    })
+                    elpage.drawText(`Student No.`, { x: 15, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Name`, { x: 90, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Address`, { x: 210, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Sex`, { x: 320, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Course`, { x: 370, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Major`, { x: 470, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Class Of`, { x: 570, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
+                    elpage.drawText(`Achievements`, { x: 640, y: height - 80, size: 9, font: fontBold, color: rgb(0, 0, 0) })
 
                     // --- CONTENT LOOP ---
                     if (dataCount > 0) {
                         let paginated = this.getPaginatedData(data, index+1, itemPerPage)
                         let stdContentHeight = height - 230;
-                        
                         for (let idx = 1; idx <= paginated.length; idx++) {
                             let edata = paginated[idx-1]
-                            
-                            elpage.drawText(`${edata.course || '--'}`, {
-                                x: 15,
-                                y: stdContentHeight + 135,
-                                lineHeight: 10,
-                                maxWidth: 230,
-                                size: 9,
-                                color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.yearFrom || '--'}`, {
-                                x: 210, y: stdContentHeight + 135, lineHeight: 10, maxWidth: 230, size: 9, color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.reportType || '--'}`, {
-                                x: 270, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.classYear || '--'}`, {
-                                x: 320, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.term || '--'}`, {
-                                x: 370, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.male || '--'}`, {
-                                x: 470, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0),
-                            })
-                            elpage.drawText(`${edata.female || '--'}`, {
-                                x: 520, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0),
-                            })
-
+                            elpage.drawText(`${edata.studentId || '--'}`, { x: 15, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.name || '--'}`, { x: 90, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.address || '--'}`, { x: 210, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.gender || '--'}`, { x: 320, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.course || '--'}`, { x: 370, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.major || '--'}`, { x: 470, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            elpage.drawText(`${edata.yearGraduated || '--'}`, { x: 570, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0) })
+                            let achievements = edata.achievement || ''
+                            if (edata.additionalAchievement && Array.isArray(edata.additionalAchievement)) {
+                                achievements += (achievements ? ', ' : '') + edata.additionalAchievement.join(', ')
+                            }
+                            elpage.drawText(`${achievements || '--'}`, { x: 640, y: stdContentHeight + 135, size: 9, color: rgb(0, 0, 0), maxWidth: 120 })
                             stdContentHeight -= 20
                         }
                     }

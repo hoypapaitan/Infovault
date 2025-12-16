@@ -59,7 +59,40 @@
                             />
                         </a-form-item>
                     </a-col>
-                    <a-col :span="24" :md="8" style="display: flex; align-items: flex-end;">
+                    <a-col :span="24" :md="6">
+                        <a-form-item label="Filter by Sex" style="margin-bottom: 0;">
+                            <a-select
+                                mode="multiple"
+                                v-model="selectedSexFilter"
+                                placeholder="Select sex..."
+                                :options="sexFilter"
+                                style="width: 100%"
+                                allowClear
+                            />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="24" :md="6">
+                        <a-form-item label="Filter by Student ID" style="margin-bottom: 0;">
+                            <a-input
+                                v-model="studentIdFilter"
+                                placeholder="Enter student ID..."
+                                allowClear
+                            />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="24" :md="6">
+                        <a-form-item label="Filter by Major" style="margin-bottom: 0;">
+                            <a-select
+                                mode="multiple"
+                                v-model="selectedMajorFilter"
+                                placeholder="Select majors..."
+                                :options="majorFilter"
+                                style="width: 100%"
+                                allowClear
+                            />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="24" :md="6" style="display: flex; align-items: flex-end;">
                         <a-button-group style="width: 100%">
                             <a-button @click="exportCSV" icon="cloud-download" block>Export CSV</a-button>
                             <a-button @click="generatePrint" icon="printer" block>Print Report</a-button>
@@ -126,6 +159,10 @@
                     <span v-else class="text-muted" style="opacity: 0.6;">—</span>
                 </template>
 
+                <template slot="yearGraduated" slot-scope="text">
+                    <a-tag color="blue">{{ text }}</a-tag>
+                </template>
+
                 <template slot="action" slot-scope="text, record">
                     <div class="action-buttons">
                         <a-tooltip title="View Details">
@@ -134,17 +171,18 @@
                         <a-tooltip v-if="isAdmin" title="Edit Record">
                             <a-button type="primary" shape="circle" icon="edit" size="small" class="ml-2" @click="handleEdit(record)" />
                         </a-tooltip>
-                        <a-popconfirm
-                            v-if="isAdmin"
-                            title="Are you sure you want to delete this record?"
-                            ok-text="Yes"
-                            cancel-text="No"
-                            @confirm="handleDelete(record)"
-                        >
-                            <a-tooltip title="Delete Record">
-                                <a-button type="danger" shape="circle" icon="delete" size="small" class="ml-2" />
-                            </a-tooltip>
-                        </a-popconfirm>
+                    </div>
+                </template>
+
+                <template slot="major" slot-scope="text">
+                    <span>{{ text || '—' }}</span>
+                </template>
+
+                <template slot="achievements" slot-scope="record">
+                    <div>
+                        <a-tag color="blue" v-if="record.achievement">{{ record.achievement }}</a-tag>
+                        <a-tag color="purple" v-for="ach in (record.additionalAchievement || [])" :key="ach">{{ ach }}</a-tag>
+                        <span v-if="!record.achievement && (!record.additionalAchievement || record.additionalAchievement.length === 0)" class="text-muted" style="opacity: 0.6;">—</span>
                     </div>
                 </template>
             </a-table>
@@ -173,6 +211,22 @@
                         size="small"
                     />
                 </div>
+            </div>
+            <div v-if="invalidCsvData.length > 0" style="margin-top: 24px;">
+                <h5 class="font-semibold mb-2" style="color: #d4380d;">Records with Missing Required Fields (Not Uploaded)</h5>
+                <a-button type="dashed" icon="cloud-download" @click="exportInvalidCSV" style="margin-bottom: 10px;">
+                    Export Invalid Data as CSV
+                </a-button>
+                <div style="max-height:400px;overflow-y:auto;">
+                    <a-table
+                        :dataSource="invalidCsvData"
+                        :columns="columns.filter(col => col.dataIndex)"
+                        :pagination="{ pageSize: 5 }"
+                        rowKey="studentId"
+                        size="small"
+                    />
+                </div>
+                <div class="text-muted" style="margin-top: 8px;">Please fill in all required fields and re-upload these records.</div>
             </div>
         </a-modal>
 
@@ -233,6 +287,9 @@
                         <a-select-option value="With Honor">With Honor</a-select-option>
                         <a-select-option value="With High Honor">With High Honor</a-select-option>
                         <a-select-option value="With Highest Honor">With Highest Honor</a-select-option>
+                        <a-select-option value="Leadership Awardee">Leadership Awardee</a-select-option>
+                        <a-select-option value="Cultural Awardee">Cultural Awardee</a-select-option>
+                        <a-select-option value="Player of the Year">Player of the Year</a-select-option>
                     </a-select>
                 </a-form-item>
                 <a-form-item label="Sex" required>
@@ -358,7 +415,10 @@ export default {
         filteredUser() {
             return this.users.filter(el =>
                 (this.selectedCourseFilter.length ? this.selectedCourseFilter.includes(el.course) : true) &&
-                (this.selectedSchoolYearFilter.length ? this.selectedSchoolYearFilter.includes(el.yearGraduated) : true)
+                (this.selectedSchoolYearFilter.length ? this.selectedSchoolYearFilter.includes(el.yearGraduated) : true) &&
+                (this.selectedSexFilter.length ? this.selectedSexFilter.includes(el.gender) : true) &&
+                (this.selectedMajorFilter.length ? this.selectedMajorFilter.includes(el.major) : true) &&
+                (this.studentIdFilter ? String(el.studentId).includes(this.studentIdFilter) : true)
             )
         },
         columns() {
@@ -400,7 +460,8 @@ export default {
                     dataIndex: 'course', 
                     key: 'course',
                     sorter: (a, b) => a.course.localeCompare(b.course), 
-                    scopedSlots: { customRender: 'course' } 
+                    scopedSlots: { customRender: 'course' },
+                    width: 230 
                 },
                 { 
                     title: 'CLASS OF', 
@@ -411,20 +472,25 @@ export default {
                     width: 130 
                 },
                 { 
-                    title: 'ACHIEVEMENT', 
-                    dataIndex: 'achievement', 
-                    key: 'achievement', 
-                    sorter: (a, b) => a.achievement.localeCompare(b.achievement), 
-                    scopedSlots: { customRender: 'achievement' }, 
-                    width: 200 
+                    title: 'MAJOR', 
+                    dataIndex: 'major', 
+                    key: 'major',
+                    sorter: (a, b) => (a.major || '').localeCompare(b.major || ''),
+                    scopedSlots: { customRender: 'major' },
+                    width: 180 
+                },
+                { 
+                    title: 'ACHIEVEMENTS', 
+                    key: 'achievements',
+                    scopedSlots: { customRender: 'achievements' },
+                    width: 220 
                 },
                 { 
                     title: 'ACTION', 
-                    key: 'action', 
-                    scopedSlots: { customRender: 'action' }, 
-                    width: 150, 
-                    align: 'center', 
-                    fixed: 'right' 
+                    key: 'action',
+                    scopedSlots: { customRender: 'action' },
+                    fixed: 'right',
+                    width: 120
                 },
             ];
         },
@@ -473,6 +539,7 @@ export default {
             users: [],
             usersOrig: [],
             csvData: [],
+            invalidCsvData: [],
             courseFilter: [],
             selectedCourseFilter: [],
             schoolYearFilter: [],
@@ -481,6 +548,9 @@ export default {
                 "Cum Laude",
                 "Magna Cum Laude",
                 "Summa Cum Laude",
+                "With Honor",
+                "With High Honor",
+                "With Highest Honor",
                 "None"
             ],
             programsOpt: [
@@ -579,7 +649,15 @@ export default {
                     'Associate in Computer Technology'
                 ],
 
-            }
+            },
+            sexFilter: [
+                { label: 'Male', value: 'Male' },
+                { label: 'Female', value: 'Female' }
+            ],
+            selectedSexFilter: [],
+            studentIdFilter: '',
+            majorFilter: [],
+            selectedMajorFilter: [],
         }
     },
     // FIX: Auto-reset pagination to page 1 when filtering
@@ -678,20 +756,36 @@ export default {
             let csvData = d3.csvParse(fileContent)
             
             // Safety check for user
-            const creatorId = this.user ? Number(this.user.userId) : 0; 
+            const creatorId = this.user ? Number(this.user.userId) : 0;
 
-            this.csvData = csvData.map((rec) => ({
-                studentId: rec.studentId || rec.student_id || rec['Student ID'] || '',
-                name: rec.name || '',
-                address: rec.address || '',
-                yearGraduated: rec.yearGraduated || rec.year_graduated || rec['Year Graduated'] || '',
-                course: rec.course || '',
-                major: rec.major || '',
-                program: rec.program || '',
-                achievement: rec.achievement || '',
-                gender: rec.gender || '',
-                createdBy: creatorId
-            }))
+            let requiredFields = [
+                'studentId', 'name', 'yearGraduated', 'school', 'course', 'major', 'program', 'gender'
+            ];
+            let validRows = [], invalidRows = [];
+            csvData.forEach(rec => {
+                let mapped = {
+                    studentId: rec.studentId || rec.student_id || rec['Student ID'] || '',
+                    name: rec.name || '',
+                    address: rec.address || '',
+                    batch: rec.batch || '',
+                    section: rec.section || '',
+                    yearGraduated: rec.yearGraduated || rec.year_graduated || rec['Year Graduated'] || '',
+                    school: rec.school || '',
+                    course: rec.course || '',
+                    major: rec.major || '',
+                    program: rec.program || '',
+                    category: rec.category || 'Local Graduate',
+                    achievement: rec.achievement || '',
+                    gender: rec.gender || '',
+                    status: rec.status || 'Alumnus',
+                    createdBy: creatorId
+                };
+                let hasBlank = requiredFields.some(f => !mapped[f] || String(mapped[f]).trim() === '');
+                if (hasBlank) invalidRows.push(mapped);
+                else validRows.push(mapped);
+            });
+            this.csvData = validRows;
+            this.invalidCsvData = invalidRows;
 
             console.log(this.csvData)
             return false 
@@ -704,18 +798,12 @@ export default {
             try {
                 const { cleanData, duplicatesFound } = this.filterDuplicatesFromCSV(data);
 
-                if (duplicatesFound.length > 0) {
+                if (duplicatesFound.length > 0 || cleanData.length === 0) {
                     this.$notification.warning({
-                        message: 'Duplicates Found',
-                        description: `${duplicatesFound.length} duplicate entries were skipped. ${cleanData.length} new records will be uploaded.`
+                        message: 'Duplicate Data Found or No New Data Can be Uploaded',
+                        description: `${duplicatesFound.length} duplicate entries were found and skipped. Please review the invalid data section for details.`
                     });
-                }
 
-                if (cleanData.length === 0) {
-                    this.$notification.warning({
-                        message: 'No New Data',
-                        description: 'All entries in the CSV already exist. No new records to upload.'
-                    });
                     return;
                 }
 
@@ -757,13 +845,16 @@ export default {
 
                     let courses = []
                     let sy = []
+                    let majors = [];
                     grads.forEach(element => {
                         if(element.course) courses.push({ label: element.course, value: element.course })
                         if(element.yearGraduated) sy.push({ label: element.yearGraduated, value: element.yearGraduated })
+                        if(element.major) majors.push({ label: element.major, value: element.major });
                     });
                     
                     this.courseFilter = courses.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
                     this.schoolYearFilter = sy.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
+                    this.majorFilter = majors.filter((e, i, self) => i === self.findIndex((t) => t.label === e.label));
                 }
             })
         },
@@ -885,6 +976,23 @@ export default {
                 }
             });
             return { cleanData, duplicatesFound };
+        },
+        // ...existing code...
+        exportInvalidCSV() {
+            if (!this.invalidCsvData.length) return;
+            const exportableColumns = this.columns.filter(col => col.dataIndex);
+            const content = [
+                exportableColumns.map(col => this.wrapCsvValue(col.title))
+            ].concat(
+                this.invalidCsvData.map(row =>
+                    exportableColumns.map(col => this.wrapCsvValue(row[col.dataIndex])).join(',')
+                )
+            ).join('\n');
+            const anchor = document.createElement('a');
+            anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
+            anchor.target = '_blank';
+            anchor.download = 'InvalidData.csv';
+            anchor.click();
         },
     }
 }

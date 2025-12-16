@@ -24,6 +24,7 @@ class GraduatesModel extends Model
         'yearGraduated',
         'advisoryId',
         'section',
+        'school',
         'course',
         'major',
         'achievement',
