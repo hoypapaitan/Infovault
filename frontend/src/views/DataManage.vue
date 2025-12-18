@@ -257,14 +257,14 @@
                 </a-form-item>
                 <a-form-item label="Course" required>
                     <a-select v-model="singleRecord.course" placeholder="Courses" allowClear :dropdownMatchSelectWidth="false">
-                        <a-select-option v-for="item in coursesOpt[singleRecord.program]" :key="item" :value="item">
+                        <a-select-option v-for="item in coursesOpt[singleRecord.school]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
                 </a-form-item>
                 <a-form-item label="Major In" required>
                     <a-select v-model="singleRecord.major" placeholder="Majors" allowClear :dropdownMatchSelectWidth="false">
-                        <a-select-option v-for="item in majorOptions[singleRecord.program]" :key="item" :value="item">
+                        <a-select-option v-for="item in majorOptions[singleRecord.school]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
