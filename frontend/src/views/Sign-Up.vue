@@ -273,7 +273,7 @@ export default ({
 					email: formData.email,
 					address: formData.address,
 					contact: formData.contact,
-					userType: 1, // Default value
+					userType: 2, // Default value
 					status: 1    // Default value
 				};
 

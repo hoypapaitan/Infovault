@@ -42,6 +42,8 @@ export default {
   },
   methods: {
     async generatePdf() {
+
+      // return
       if (this.graduates.length === 0) {
         this.$message.warning("No data to export");
         return;
@@ -59,7 +61,11 @@ export default {
         const fontSize = 10;
         const rowHeight = 20;
         const margin = 50;
-        
+
+        // Set A4 size in points (portrait, 1pt = 1/72 inch)
+        const A4_WIDTH = 841.89; // 210mm (portrait width)
+        const A4_HEIGHT = 595.28; // 297mm (portrait height)
+
         // Column Positions (X coordinates) - Adjusted for all required fields
         const xPos = {
           studentId: 40,
@@ -68,14 +74,15 @@ export default {
           address: 310,
           classOf: 420,
           course: 470,
-          achievement: 600,
-          additional: 700
+          achievement: 700 // merged achievement & additional
         };
 
-        // Helper: Add New Page
+        // Helper: Add New Page (A4 size)
         const addNewPage = () => {
-          const page = pdfDoc.addPage();
-          const { width, height } = page.getSize();
+          // Always use portrait: width < height
+          const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+          const width = A4_WIDTH;
+          const height = A4_HEIGHT;
           // Title
           const titleText = this.year 
             ? `Graduate List - Batch ${this.year}` 
@@ -95,8 +102,7 @@ export default {
           page.drawText('Address', { x: xPos.address, y: headerY, size: 11, font: fontBold });
           page.drawText('Class of', { x: xPos.classOf, y: headerY, size: 11, font: fontBold });
           page.drawText('Course', { x: xPos.course, y: headerY, size: 11, font: fontBold });
-          page.drawText('Achievement', { x: xPos.achievement, y: headerY, size: 11, font: fontBold });
-          page.drawText('Additional', { x: xPos.additional, y: headerY, size: 11, font: fontBold });
+          page.drawText('Achievement(s)', { x: xPos.achievement, y: headerY, size: 11, font: fontBold });
           return { page, currentY: headerY - 10, height };
         };
 
@@ -121,32 +127,78 @@ export default {
             color: rgb(0.8, 0.8, 0.8),
           });
           // Draw Data
-          page.drawText(String(grad.studentId || ''), { x: xPos.studentId, y: currentY, size: fontSize, font: font });
-          // Name (wrap if too long)
-          let safeName = grad.name || '';
-          if (safeName.length > 22) safeName = safeName.substring(0, 20) + '...';
-          page.drawText(safeName, { x: xPos.name, y: currentY, size: fontSize, font: font });
-          // Gender
-          page.drawText(String(grad.gender || ''), { x: xPos.gender, y: currentY, size: fontSize, font: font });
-          // Address (wrap if too long)
-          let safeAddress = grad.address || '';
-          if (safeAddress.length > 22) safeAddress = safeAddress.substring(0, 20) + '...';
-          page.drawText(safeAddress, { x: xPos.address, y: currentY, size: fontSize, font: font });
-          // Class of
-          page.drawText(String(grad.yearGraduated || ''), { x: xPos.classOf, y: currentY, size: fontSize, font: font });
-          // Course (wrap if too long)
-          let safeCourse = grad.course || '';
-          if (safeCourse.length > 22) safeCourse = safeCourse.substring(0, 20) + '...';
-          page.drawText(safeCourse, { x: xPos.course, y: currentY, size: fontSize, font: font });
-          // Achievement
-          let safeAch = grad.achievement || '';
-          if (safeAch.length > 18) safeAch = safeAch.substring(0, 16) + '...';
-          page.drawText(safeAch, { x: xPos.achievement, y: currentY, size: fontSize, font: font });
-          // Additional Achievements (array or string)
-          let addl = grad.additionalAchievement;
-          if (Array.isArray(addl)) addl = addl.join(', ');
-          if (addl && addl.length > 18) addl = addl.substring(0, 16) + '...';
-          page.drawText(String(addl || ''), { x: xPos.additional, y: currentY, size: fontSize, font: font });
+          // Helper for word wrapping any text in a column
+          function wrapText(text, maxWidth) {
+            if (!text) return [''];
+            if (font.widthOfTextAtSize(text, fontSize) <= maxWidth) return [text];
+            let words = text.split(' ');
+            let lines = [];
+            let line = '';
+            for (let i = 0; i < words.length; i++) {
+              let testLine = line ? line + ' ' + words[i] : words[i];
+              if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth) {
+                if (line) lines.push(line);
+                line = words[i];
+              } else {
+                line = testLine;
+              }
+            }
+            if (line) lines.push(line);
+            return lines;
+          }
+
+          // Define max widths for each column
+          const colWidths = {
+            studentId: 60,
+            name: 120,
+            gender: 60,
+            address: 100,
+            classOf: 60,
+            course: 180,
+            achievement: 100
+          };
+
+          // Prepare all column values and their wrapped lines
+          const rowData = {
+            studentId: String(grad.studentId || ''),
+            name: grad.name || '',
+            gender: String(grad.gender || ''),
+            address: grad.address || '',
+            classOf: String(grad.yearGraduated || ''),
+            course: grad.course || '',
+            achievement: (() => {
+              let achievements = [];
+              if (grad.achievement) achievements.push(grad.achievement);
+              if (Array.isArray(grad.additionalAchievement)) {
+                achievements = achievements.concat(grad.additionalAchievement);
+              } else if (grad.additionalAchievement) {
+                achievements.push(grad.additionalAchievement);
+              }
+              return achievements.filter(Boolean).join(', ');
+            })()
+          };
+
+          // Wrap all columns
+          const wrappedCols = {};
+          let maxLines = 1;
+          for (const key in rowData) {
+            wrappedCols[key] = wrapText(rowData[key], colWidths[key]);
+            if (wrappedCols[key].length > maxLines) maxLines = wrappedCols[key].length;
+          }
+
+          // Draw each line for the row, stacking vertically
+          for (let lineIdx = 0; lineIdx < maxLines; lineIdx++) {
+            page.drawText(wrappedCols.studentId[lineIdx] || '', { x: xPos.studentId, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.name[lineIdx] || '', { x: xPos.name, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.gender[lineIdx] || '', { x: xPos.gender, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.address[lineIdx] || '', { x: xPos.address, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.classOf[lineIdx] || '', { x: xPos.classOf, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.course[lineIdx] || '', { x: xPos.course, y: currentY, size: fontSize, font: font });
+            page.drawText(wrappedCols.achievement[lineIdx] || '', { x: xPos.achievement, y: currentY, size: fontSize, font: font });
+            currentY -= fontSize + 2;
+          }
+          // Adjust for extra lines (so next row doesn't overlap)
+          currentY += (fontSize + 2) * (1 - maxLines);
         }
 
         // 4. Save & Download

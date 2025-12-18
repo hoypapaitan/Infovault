@@ -248,8 +248,8 @@
                         <a-select-option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Program Covered" required>
-                    <a-select v-model="singleRecord.program" placeholder="Academic Program" allowClear :dropdownMatchSelectWidth="false">
+                <a-form-item label="School" required>
+                    <a-select v-model="singleRecord.school" placeholder="School" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in programsOpt" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
@@ -264,7 +264,7 @@
                 </a-form-item>
                 <a-form-item label="Major In" required>
                     <a-select v-model="singleRecord.major" placeholder="Majors" allowClear :dropdownMatchSelectWidth="false">
-                        <a-select-option v-for="item in majorOptions[singleRecord.course]" :key="item" :value="item">
+                        <a-select-option v-for="item in majorOptions[singleRecord.program]" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
                     </a-select>
@@ -342,8 +342,8 @@
                         <a-select-option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="Program Covered" required>
-                    <a-select v-model="editRecord.program" placeholder="Academic Program" allowClear :dropdownMatchSelectWidth="false">
+                <a-form-item label="School" required>
+                    <a-select v-model="editRecord.program" placeholder="School" allowClear :dropdownMatchSelectWidth="false">
                         <a-select-option v-for="item in programsOpt" :key="item" :value="item">
                             {{ item }}
                         </a-select-option>
@@ -554,57 +554,30 @@ export default {
                 "None"
             ],
             programsOpt: [
-                'GRADUATES',
-                'UNDERGRADUATE',
-                'DIPLOMA or CERTIFICATE',
+                'SCHOOL OF GRADUATES STUDIES',
+                'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES',
+                'SCHOOL OF EDUCATION',
+                'SCHOOL OF ARTS AND SCIENCES',
+                'SCHOOL OF ENGINEERING',
+                'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES',
+                'SCHOOL OF INDUSTRIAL TECHNOLOGY',
+                'SCHOOL OF INFORMATION TECHNOLOGY',
             ],
             coursesOpt: {
-                GRADUATES: [
+                'SCHOOL OF GRADUATES STUDIES': [
                     'MASTER OF ARTS IN EDUCATION',
                     'MASTER IN MANAGEMENT',
                     'MASTER OF SCIENCE IN AGRICULTURE',
                     'MASTER OF SCIENCE IN ENVIRONMENTAL MANAGEMENT'
                 ],
-                UNDERGRADUATE: [
-                    'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES',
-                    'SCHOOL OF EDUCATION',
-                    'SCHOOL OF ARTS AND SCIENCES',
-                    'SCHOOL OF ENGINEERING',
-                    'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES',
-                    'SCHOOL OF INDUSTRIAL TECHNOLOGY',
-                    'SCHOOL OF INFORMATION TECHNOLOGY',
-                ],
-                "DIPLOMA or CERTIFICATE": [
-                    'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES',
-                    'SCHOOL OF INDUSTRIAL TECHNOLOGY',
-                    'SCHOOL OF INFORMATION TECHNOLOGY'
-                ],
-            },
-            majorOptions: {
-                'MASTER OF ARTS IN EDUCATION': [
-                    'major in Science Education',
-                    'major in Filipino Language Teaching',
-                    'major in Guidance Counseling',
-                    'major in Educational Management'
-                ],
-                'MASTER IN MANAGEMENT': [
-                    'major in Public Management',
-                    'major in Business Management'
-                ],
-                'MASTER OF SCIENCE IN AGRICULTURE': [
-                    'major in Animal Science',
-                    'major in Crop Science'
-                ],
-                'MASTER OF SCIENCE IN ENVIRONMENTAL MANAGEMENT': [],
                 'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES': [
-                    'major in Animal Science',
-                    'major in Crop Science',
-                    'major in Fisheries'
+                    'Bachelor of Science in Agriculture',
+                    'Bachelor of Science in Fisheries'
                 ],
                 'SCHOOL OF ARTS AND SCIENCES': [
-                    'in Hospitality Management',
-                    'in Tourism Management',
-                    'in Political Science'
+                    'Bachelor of Science in Hospitality Management',
+                    'Bachelor of Science in Tourism Management',
+                    'Bachelor of Science in Political Science'
                 ],
                 'SCHOOL OF EDUCATION': [
                     'Bachelor of Elementary Education',
@@ -644,9 +617,56 @@ export default {
                     'Certificate in Food Technology'
                 ],
                 'SCHOOL OF INFORMATION TECHNOLOGY': [
-                    'Bachelor of Science in Information Technology with Specialization in Application Programming',
-                    'Bachelor of Science in Information Technology with Specialization in Digital Design',
+                    'Bachelor of Science in Information Technology',
                     'Associate in Computer Technology'
+                ],
+            },
+            majorOptions: {
+                'SCHOOL OF GRADUATES STUDIES': [
+                    'None',
+                    'Science Education',
+                    'Filipino Language Teaching',
+                    'Guidance Counseling',
+                    'Educational Management',
+                    'Public Management',
+                    'Business Management',
+                    'Animal Science',
+                    'Crop Science',
+                    'Animal Science',
+                    'Crop Science',
+                    'Fisheries'
+                ],
+                'SCHOOL OF AGRICULTURE AND AQUATIC SCIENCES': [
+                    'None',
+                    'Animal Science',
+                    'Crop Science'
+                ],
+                'SCHOOL OF ARTS AND SCIENCES': [],
+                'SCHOOL OF EDUCATION': [
+                    'None',
+                    'English',
+                    'Filipino',
+                    'Science',
+                    'Social Studies',
+                    'Mathematics',
+                    'Physical Education',
+                    'Home Economics',
+                    'Information and Communication Technology'
+                ],
+                'SCHOOL OF ENGINEERING': [
+                    'Construction Engineering and Management'
+                ],
+                'SCHOOL OF FORESTRY AND ENVIRONMENTAL SCIENCES': [],
+                'SCHOOL OF INDUSTRIAL TECHNOLOGY': [
+                    'None',
+                    'Automotive Engineering Technology',
+                    'Electrical Engineering Technology',
+                    'Civil Engineering Technology',
+                    'Food Technology'
+                ],
+                'SCHOOL OF INFORMATION TECHNOLOGY': [
+                    'Application Programming',
+                    'Digital Design'
                 ],
 
             },

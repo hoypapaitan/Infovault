@@ -22,9 +22,12 @@
                         <pdf-export 
                             :graduates="filteredGraduates" 
                             :year="selectedYear"
+                            :course="selectedCourse"
                             :disabled="loading || filteredGraduates.length === 0"
                         >
-                            Export {{ selectedYear ? 'Batch ' + selectedYear : 'All Data' }}
+                            <span style="white-space: normal; word-break: break-word; min-width: 180px; display: inline-block;">
+                                Export {{ selectedYear ? 'Batch ' + selectedYear : 'All Data' }}<span v-if="selectedCourse"> – <span style="font-weight: 600; color: #222;">{{ selectedCourse }}</span></span>
+                            </span>
                         </pdf-export>
                     </a-space>
                 </a-col>
@@ -236,7 +239,7 @@
                         <canvas id="departmentsChart" ref="departmentsChart"></canvas>
                     </div>
                     <div v-else-if="departmentsView === 'trends'" class="chart-container">
-                        <canvas id="departmentTrendsChart" ref="departmentTrendsChart"></canvas>
+                        <canvas id="departmentTrendsChart" height="300" ref="departmentTrendsChart"></canvas>
                     </div>
                     <div v-else>
                         <div class="comparison-grid">
@@ -1428,6 +1431,10 @@ export default {
         createDepartmentsChart() {
             const canvas = document.getElementById('departmentsChart');
             if (!canvas) return;
+            // Set canvas height before Chart.js renders
+            canvas.height = 300;
+            canvas.style.height = '300px';
+            canvas.setAttribute('height', '300');
 
             // FIX: Destroy existing Chart.js instance on the canvas
             const existingChart = Chart.getChart(canvas);
@@ -1521,6 +1528,10 @@ export default {
         createDepartmentTrendsChart() {
             const canvas = document.getElementById('departmentTrendsChart');
             if (!canvas) return;
+            // Set canvas height before Chart.js renders
+            canvas.height = 300;
+            canvas.style.height = '300px';
+            canvas.setAttribute('height', '300');
 
             // FIX: Destroy existing Chart.js instance on the canvas
             const existingChart = Chart.getChart(canvas);
@@ -1876,6 +1887,7 @@ export default {
 /* Chart containers */
 .chart-container {
     height: 320px;
+    max-height: 320px;
     position: relative;
     padding: 20px;
     background: #fafbfc;
